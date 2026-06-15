@@ -1,0 +1,133 @@
+.shg-header-bar {
+  height: 64px !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid var(--shg-ink-200) !important;
+  box-shadow: 0 1px 3px rgba(11, 18, 32, 0.04) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  color: var(--shg-ink-900) !important;
+  padding: 0 16px !important;
+}
+
+.header-toggle-btn {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  line-height: 38px;
+  box-shadow: 0 2px 8px rgba(15, 76, 129, 0.25) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-search-field {
+  width: 360px;
+
+  // Compact height for toolbar
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    min-height: unset !important;
+  }
+
+  ::ng-deep .mdc-text-field--outlined {
+    height: 40px;
+  }
+
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.notification-btn {
+  color: var(--shg-ink-500);
+
+  &:hover {
+    color: var(--shg-primary);
+    background-color: rgba(15, 76, 129, 0.06);
+  }
+}
+
+.notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--shg-error);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  line-height: 1;
+}
+
+.user-profile-trigger {
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+
+  &:hover { background-color: rgba(11, 18, 32, 0.03); }
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--shg-primary);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shg-ink-900);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--shg-ink-500);
+  line-height: 1.2;
+}
+
+.cursor-pointer { cursor: pointer; }
+.fs-7 { font-size: 0.75rem; }
+
+::ng-deep .shg-custom-menu {
+  border-radius: 8px !important;
+  border: 1px solid var(--shg-ink-200) !important;
+  box-shadow: 0 4px 12px rgba(11, 18, 32, 0.08) !important;
+  padding: 4px 0 !important;
+  min-width: 200px !important;
+
+  .user-menu-header { background-color: var(--shg-canvas); }
+
+  button.mat-mdc-menu-item {
+    font-size: 14px !important;
+    font-family: 'Inter', sans-serif !important;
+    height: 40px !important;
+
+    i {
+      font-size: 16px;
+      vertical-align: middle;
+    }
+  }
+}

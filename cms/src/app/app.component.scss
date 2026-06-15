@@ -1,0 +1,57 @@
+.app-layout-root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+}
+
+.app-right-panel {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content {
+  background-color: var(--shg-canvas);
+  min-height: 100%;
+}
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  
+  .ok & {
+    background-color: var(--shg-success);
+  }
+  
+  .warn & {
+    background-color: var(--shg-warning);
+  }
+  
+  .err & {
+    background-color: var(--shg-error);
+  }
+  
+  .info & {
+    background-color: var(--shg-info);
+  }
+}
+
+/* Animations for cards */
+.shg-kpi-card {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

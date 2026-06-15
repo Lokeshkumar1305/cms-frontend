@@ -1,0 +1,167 @@
+.border-warning-card {
+  border: 1px solid var(--shg-warning) !important;
+  border-radius: 12px !important;
+}
+
+.border-primary-card {
+  border: 1px solid var(--shg-primary) !important;
+  border-radius: 12px !important;
+}
+
+.shg-tenant-banner {
+  background-color: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.shg-alert-banner {
+  &.ok {
+    background-color: rgba(22, 163, 74, 0.08);
+    color: var(--shg-success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+  }
+  &.err {
+    background-color: rgba(220, 38, 38, 0.08);
+    color: var(--shg-error);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+}
+
+.notify-panel {
+  background-color: var(--shg-canvas);
+  border: 1px solid var(--shg-ink-200);
+}
+
+.config-node-card {
+  border: 1px solid var(--shg-ink-200) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 3px 10px rgba(11, 18, 32, 0.06) !important;
+  }
+
+  &.active-edit-card {
+    border-color: var(--shg-primary) !important;
+    background-color: rgba(15, 76, 129, 0.02) !important;
+  }
+}
+
+.action-btn {
+  height: 44px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner-inline {
+  display: inline-block;
+
+  ::ng-deep circle {
+    stroke: #ffffff !important;
+  }
+}
+
+// Compact form fields inside nested panels
+.compact-field {
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+}
+
+// Path & Workflow Section styling
+.add-node-btn {
+  height: 44px !important;
+  min-width: 110px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  flex-shrink: 0;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.path-node-tag {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6 !important;
+  color: #212529;
+  border-radius: 6px !important;
+  display: inline-flex;
+  align-items: center;
+
+  .bi-x {
+    cursor: pointer;
+    font-size: 16px;
+    &:hover {
+      color: #dc3545 !important;
+    }
+  }
+}
+
+.path-node-separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--shg-ink-300);
+}
+
+.compiled-path-box {
+  background-color: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  font-family: var(--shg-font-mono), monospace;
+  color: #495057;
+  font-size: 14px;
+}
+
+.workflow-row-container {
+  background-color: #ffffff;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px;
+}
+
+.path-node-badge {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #212529;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.locked-badge {
+  background-color: #ffeaea;
+  color: #d93838;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 4px 8px !important;
+}
+
+.remove-row-btn {
+  color: #d93838 !important;
+  background-color: #ffeaea !important;
+  border: 1px solid #ffcccc !important;
+  font-size: 13px !important;
+  border-radius: 6px;
+  padding: 6px 12px;
+
+  &:hover {
+    background-color: #ffd6d6 !important;
+  }
+}
+
+.add-substage-btn {
+  border: 1px solid #dee2e6 !important;
+  background-color: #ffffff !important;
+  color: #495057 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  padding: 6px 12px;
+
+  &:hover {
+    background-color: #f8f9fa !important;
+  }
+}
+

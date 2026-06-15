@@ -1,0 +1,377 @@
+<div class="mb-4">
+  <h1 class="shg-display mb-1">Case Workspace Queue</h1>
+  <p class="shg-caption">Active operator dashboard queue to audit context, verify credit files, and execute workflow handoffs.</p>
+</div>
+
+<!-- Tenant Context Guard -->
+<div *ngIf="!activeProductId" class="my-4">
+  <mat-card class="p-4 text-center border-warning-card">
+    <i class="bi bi-shield-lock-fill fs-1 d-block mb-3" style="color:var(--shg-warning)"></i>
+    <h3 class="shg-title">Tenant Context Required</h3>
+    <p class="shg-body mx-auto mb-3" style="max-width:480px; color:var(--shg-ink-500)">
+      No Product Workspace is currently active. To query operator queues, please provision or select an active workspace partition.
+    </p>
+    <a routerLink="/product-config" mat-flat-button color="primary" class="gap-2">
+      <i class="bi bi-hdd-network"></i>
+      <span>Go to Product Configurations</span>
+    </a>
+  </mat-card>
+</div>
+
+<div *ngIf="activeProductId">
+
+  <!-- Active Tenant Banner -->
+  <div class="shg-tenant-banner d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 rounded-3 mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
+      <span class="shg-body m-0">Active Operator Tenant: <strong>{{ activeProductName }}</strong></span>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="shg-mono px-3 py-1 rounded" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
+      <button mat-stroked-button color="primary" (click)="showIngestForm = !showIngestForm" class="gap-1">
+        <i class="bi" [class.bi-plus-lg]="!showIngestForm" [class.bi-dash-lg]="showIngestForm"></i>
+        <span>Mock Ingestion Tool</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mock Ingestion Form -->
+  <mat-card *ngIf="showIngestForm" class="p-4 mb-4 animate-slide">
+    <h3 class="shg-title mb-3 pb-2 border-bottom">Ingest Simulated Case Workflow</h3>
+    <div class="row g-3">
+      <div class="col-12 col-md-3">
+        <label class="field-label">Applicant name</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput [(ngModel)]="ingestApplicant" placeholder="e.g. Ramana Yadavalli" />
+        </mat-form-field>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="field-label">Capital requested</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput type="number" [(ngModel)]="ingestCapital" />
+        </mat-form-field>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="field-label">Credit score</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput type="number" [(ngModel)]="ingestScore" />
+        </mat-form-field>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="field-label">Config pathway</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput [(ngModel)]="ingestConfigPath" />
+        </mat-form-field>
+      </div>
+      <div class="col-12 col-md-2 d-flex align-items-end pb-0">
+        <button mat-flat-button color="primary" class="w-100 mb-0" style="height:44px" (click)="triggerIngest()" [disabled]="!ingestApplicant.trim()">
+          Ingest Case
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Filter Console -->
+  <mat-card class="p-3 mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <span class="fw-bold shg-body" style="color:var(--shg-ink-500); text-transform:uppercase; font-size:12px; letter-spacing:0.5px;">
+        Workspace Queue Filters
+      </span>
+      <div class="d-flex gap-2">
+        <button mat-flat-button color="primary" (click)="applySearch()" class="gap-1 filter-btn">
+          <i class="bi bi-funnel"></i>
+          <span>Apply Filters</span>
+        </button>
+        <button mat-stroked-button (click)="clearSearch()" class="gap-1 filter-btn">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          <span>Reset</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Status Filter -->
+      <div class="col-12 col-md-4">
+        <label class="field-label">Status</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <mat-select [(ngModel)]="searchStatus">
+            <mat-option value="">All Status States</mat-option>
+            <mat-option value="INITIATED">INITIATED</mat-option>
+            <mat-option value="IN_PROGRESS">IN_PROGRESS</mat-option>
+            <mat-option value="COMPLETED">COMPLETED</mat-option>
+            <mat-option value="FAILED">FAILED</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Pathway Filter -->
+      <div class="col-12 col-md-4">
+        <label class="field-label">Filter by pathway</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <i class="bi bi-folder-symlink" matPrefix></i>
+          <input matInput [(ngModel)]="searchPath" placeholder="e.g. EXPRESS..." />
+        </mat-form-field>
+      </div>
+
+      <!-- Applicant Filter -->
+      <div class="col-12 col-md-4">
+        <label class="field-label">Filter by applicant</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <i class="bi bi-person" matPrefix></i>
+          <input matInput [(ngModel)]="searchApplicant" placeholder="Applicant name..." />
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Queue Table + Detail Drawer -->
+  <div class="row g-4">
+
+    <!-- Main Queue Table -->
+    <div class="col-12" [class.col-lg-8]="selectedCase" [class.col-xl-9]="selectedCase">
+      <mat-card class="queue-table-card">
+
+        <table mat-table [dataSource]="casesQueue" matSort (matSortChange)="onSortChange($event)" class="w-100">
+
+          <!-- Case ID -->
+          <ng-container matColumnDef="caseId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="caseId">Case ID</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="shg-mono fw-bold">{{ item.caseId }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Config Path -->
+          <ng-container matColumnDef="configPath">
+            <th mat-header-cell *matHeaderCellDef>Config Path</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="shg-caption px-2 py-1 rounded" style="background:var(--shg-canvas); color:var(--shg-ink-900); border:1px solid var(--shg-ink-200)">
+                {{ item.configPath }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Applicant -->
+          <ng-container matColumnDef="applicant">
+            <th mat-header-cell *matHeaderCellDef>Applicant</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="fw-semibold shg-body">{{ item.externalMetadata.applicantName }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Capital -->
+          <ng-container matColumnDef="capital">
+            <th mat-header-cell *matHeaderCellDef>Capital</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="fw-bold">{{ item.externalMetadata.requestedCapital | currency:'INR':'symbol':'1.0-0' }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Credit Score -->
+          <ng-container matColumnDef="score">
+            <th mat-header-cell *matHeaderCellDef>Score</th>
+            <td mat-cell *matCellDef="let item">
+              <span
+                class="shg-pill"
+                [class.ok]="item.externalMetadata.creditScore >= 750"
+                [class.warn]="item.externalMetadata.creditScore < 750 && item.externalMetadata.creditScore >= 650"
+                [class.err]="item.externalMetadata.creditScore < 650"
+              >
+                {{ item.externalMetadata.creditScore }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="status">Status</th>
+            <td mat-cell *matCellDef="let item">
+              <span
+                class="shg-pill"
+                [class.info]="item.status === 'INITIATED'"
+                [class.warn]="item.status === 'IN_PROGRESS'"
+                [class.ok]="item.status === 'COMPLETED'"
+                [class.err]="item.status === 'FAILED'"
+              >
+                {{ item.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef style="width:90px">Actions</th>
+            <td mat-cell *matCellDef="let item">
+              <button mat-stroked-button color="primary" (click)="viewDetails(item)" class="audit-btn gap-1">
+                <i class="bi bi-eye"></i>
+                <span>Audit</span>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+            [class.selected-row]="selectedCase?.id === row.id"
+          ></tr>
+
+          <!-- No data -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-5" [attr.colspan]="displayedColumns.length">
+              <span *ngIf="isLoading">
+                <mat-spinner diameter="32" class="mx-auto mb-2"></mat-spinner>
+                <span class="shg-caption d-block">Fetching workspace silos...</span>
+              </span>
+              <span *ngIf="!isLoading">
+                <i class="bi bi-inbox fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+                <span class="shg-caption">No active cases found in queue.</span>
+              </span>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Custom Pagination Bar -->
+        <div class="shg-pagination d-flex align-items-center justify-content-between flex-wrap gap-2 px-4 py-3">
+          <!-- Left: row info + page size -->
+          <div class="d-flex align-items-center gap-3">
+            <span class="shg-caption">
+              Showing
+              <strong>{{ startItem }}–{{ endItem }}</strong>
+              of
+              <strong>{{ totalCount }}</strong>
+            </span>
+            <select
+              class="shg-page-size-select"
+              [value]="size"
+              (change)="onSizeChange(+$any($event.target).value)"
+            >
+              <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
+            </select>
+          </div>
+
+          <!-- Right: page navigation -->
+          <div class="d-flex align-items-center gap-1">
+            <button
+              class="shg-page-btn"
+              [disabled]="page <= 1"
+              (click)="changePage(page - 1)"
+            >Previous</button>
+
+            <ng-container *ngFor="let p of pageNumbers">
+              <button
+                *ngIf="p !== -1"
+                class="shg-page-btn"
+                [class.active]="p === page"
+                (click)="changePage(p)"
+              >{{ p }}</button>
+              <span *ngIf="p === -1" class="shg-caption px-1">…</span>
+            </ng-container>
+
+            <button
+              class="shg-page-btn"
+              [disabled]="page >= totalPages"
+              (click)="changePage(page + 1)"
+            >Next</button>
+          </div>
+        </div>
+
+      </mat-card>
+    </div>
+
+    <!-- Right: Case Details Drawer -->
+    <div class="col-12 col-lg-4 col-xl-3 animate-slide" *ngIf="selectedCase">
+      <mat-card class="p-4 position-relative detail-drawer">
+        <button mat-icon-button class="position-absolute top-0 end-0 m-2" (click)="selectedCase = null" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+
+        <h2 class="shg-title mb-3 pb-2 border-bottom" style="color:var(--shg-primary)">Case Details</h2>
+
+        <div class="mt-3">
+          <div class="detail-row mb-2">
+            <span class="shg-caption d-block" style="text-transform:uppercase">Case File Identifier</span>
+            <strong class="shg-body">{{ selectedCase.caseId }}</strong>
+          </div>
+          <div class="detail-row mb-2">
+            <span class="shg-caption d-block" style="text-transform:uppercase">Process Instance Key</span>
+            <code class="shg-mono" style="color:var(--shg-ink-900)">{{ selectedCase.processInstanceKey }}</code>
+          </div>
+          <div class="detail-row mb-2">
+            <span class="shg-caption d-block" style="text-transform:uppercase">Current Approval Depth</span>
+            <span class="shg-pill gray">Level {{ selectedCase.currentLevel }}</span>
+          </div>
+          <div class="detail-row mb-2">
+            <span class="shg-caption d-block" style="text-transform:uppercase">Pending Actor Groups</span>
+            <code style="color:var(--shg-primary); font-weight:600">{{ selectedCase.pendingGroups.join(', ') }}</code>
+          </div>
+        </div>
+
+        <mat-divider class="my-3"></mat-divider>
+
+        <h3 class="shg-title mb-2" style="font-size:14px">Applicant Metadata</h3>
+        <div class="row g-2 p-2 rounded mb-3" style="background:var(--shg-canvas)">
+          <div class="col-6">
+            <span class="shg-caption d-block">Applicant</span>
+            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.applicantName }}</strong>
+          </div>
+          <div class="col-6">
+            <span class="shg-caption d-block">Capital</span>
+            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.requestedCapital | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </div>
+          <div class="col-6">
+            <span class="shg-caption d-block">Credit Score</span>
+            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.creditScore }}</strong>
+          </div>
+          <div class="col-6">
+            <span class="shg-caption d-block">Tenor Duration</span>
+            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.tenorMonths }} months</strong>
+          </div>
+        </div>
+
+        <mat-divider class="my-3"></mat-divider>
+
+        <h3 class="shg-title mb-2" style="font-size:14px">Hand-Off Authorization</h3>
+        <div class="p-3 rounded mb-4" style="background:var(--shg-canvas)">
+          <span class="shg-caption d-block mb-1">Secure Token Redirect (JWT)</span>
+          <textarea readonly class="w-100 shg-mono p-2 rounded mb-2" rows="2" style="font-size:10px; resize:none; background:#fff; border:1px solid var(--shg-ink-200)">{{ selectedCase.handOffContext.authToken }}</textarea>
+          <a
+            [href]="selectedCase.handOffContext.redirectUri"
+            target="_blank"
+            mat-flat-button
+            color="primary"
+            class="w-100 gap-1"
+          >
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>Proceed to Hand-Off Audit</span>
+          </a>
+          <span class="shg-caption d-block text-center mt-1" style="font-size:10px">
+            Expires: {{ selectedCase.handOffContext.tokenExpiry | date:'short' }}
+          </span>
+        </div>
+
+        <mat-divider class="my-3"></mat-divider>
+
+        <h3 class="shg-title mb-3" style="font-size:14px">Workflow Audit Trail</h3>
+        <div class="audit-timeline">
+          <div *ngFor="let h of selectedCase.history" class="timeline-item d-flex gap-3 pb-3">
+            <div class="timeline-dot-wrapper">
+              <div class="timeline-dot"></div>
+            </div>
+            <div>
+              <div class="fw-semibold shg-body" style="font-size:13px">
+                {{ h.tierName }} — <span style="color:var(--shg-primary)">{{ h.actionTaken }}</span>
+              </div>
+              <p class="shg-caption m-0 mt-1">Actioned By: {{ h.actionedByUser }}</p>
+              <p class="shg-caption m-0 mt-1" style="color:var(--shg-ink-900); font-style:italic">"{{ h.comments }}"</p>
+              <span class="shg-caption" style="font-size:10px">{{ h.timestamp | date:'shortTime' }}</span>
+            </div>
+          </div>
+        </div>
+
+      </mat-card>
+    </div>
+
+  </div>
+</div>

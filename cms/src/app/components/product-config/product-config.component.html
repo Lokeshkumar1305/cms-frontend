@@ -1,0 +1,149 @@
+<div class="mb-4">
+  <h1 class="shg-display mb-1">Product Configuration</h1>
+  <p class="shg-caption">Create, isolate, and partition product workspaces (Multi-Tenant Tenant Setup).</p>
+</div>
+
+<!-- Alert Banners -->
+<div *ngIf="successMessage" class="shg-alert-banner ok d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+  <i class="bi bi-check-circle-fill"></i>
+  <span class="shg-caption m-0 fw-semibold">{{ successMessage }}</span>
+</div>
+<div *ngIf="errorMessage" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
+</div>
+
+<div class="row g-4">
+
+  <!-- Left: Provision Form -->
+  <div class="col-12 col-lg-5">
+    <mat-card class="p-4 h-100">
+      <h2 class="shg-title mb-3 pb-2 border-bottom">Provision Product Workspace</h2>
+
+      <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- Product Name -->
+        <div class="field-group">
+          <label class="field-label">Product name</label>
+          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+            <input
+              matInput
+              type="text"
+              formControlName="productName"
+              placeholder="e.g. Commercial & Consumer Lending Vertical"
+            />
+            <mat-error *ngIf="productForm.get('productName')?.hasError('required') || productForm.get('productName')?.hasError('minlength')">
+              Product name is required (min 3 characters).
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Source System Code -->
+        <div class="field-group">
+          <label class="field-label">Source system code</label>
+          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+            <input
+              matInput
+              type="text"
+              formControlName="sourceSystemCode"
+              placeholder="e.g. LENDING-CORE"
+            />
+            <mat-error *ngIf="productForm.get('sourceSystemCode')?.invalid && productForm.get('sourceSystemCode')?.touched">
+              Source code is required (alphanumeric and uppercase).
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Description -->
+        <div class="field-group">
+          <label class="field-label">Description</label>
+
+          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+            <textarea
+              matInput
+              formControlName="description"
+              placeholder="Provide a partition description..."
+              rows="4"
+              style="resize:none"
+            ></textarea>
+            <mat-error *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched">
+              Description is required (max 200 characters).
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Submit -->
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="w-100 provision-btn mt-2"
+          [disabled]="isSubmitting"
+        >
+          <mat-spinner diameter="18" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+          <span>{{ isSubmitting ? 'Provisioning Partition...' : 'Create Product Workspace' }}</span>
+        </button>
+
+      </form>
+    </mat-card>
+  </div>
+
+  <!-- Right: Existing Partitions -->
+  <div class="col-12 col-lg-7">
+    <mat-card class="p-4 h-100 d-flex flex-column">
+      <h2 class="shg-title mb-3 pb-2 border-bottom">Active Product Partitions (Tenants)</h2>
+
+      <div class="flex-grow-1 overflow-auto" style="max-height: 500px;">
+
+        <div *ngIf="workspaces.length === 0" class="text-center py-5">
+          <i class="bi bi-hdd-network fs-1 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+          <span class="shg-caption">No product partitions provisioned yet.</span>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+          <mat-card
+            *ngFor="let ws of workspaces"
+            class="partition-card p-3 position-relative"
+            [class.active-partition]="ws.productId === activeProductId"
+          >
+            <!-- Status Badges -->
+            <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+              <span class="shg-pill ok" *ngIf="ws.status === 'ACTIVE'">{{ ws.status }}</span>
+              <span class="shg-pill info" *ngIf="ws.productId === activeProductId">ACTIVE CONTEXT</span>
+            </div>
+
+            <!-- Details -->
+            <h4 class="shg-title m-0 pe-5">{{ ws.productName }}</h4>
+            <div class="mt-2 d-flex flex-wrap gap-3">
+              <span class="shg-caption">ID: <code class="shg-mono" style="color:var(--shg-ink-900)">{{ ws.productId }}</code></span>
+              <span class="shg-caption">System Code: <strong style="color:var(--shg-ink-900)">{{ ws.sourceSystemCode }}</strong></span>
+            </div>
+            <p class="shg-body mt-2 mb-3 text-truncate-2" style="color:var(--shg-ink-500)">{{ ws.description }}</p>
+
+            <div class="d-flex align-items-center justify-content-between border-top pt-2">
+              <span class="shg-caption">Created: {{ ws.createdDate | date:'short' }}</span>
+
+              <button
+                *ngIf="ws.productId !== activeProductId"
+                mat-stroked-button
+                color="primary"
+                (click)="selectTenant(ws)"
+                class="gap-1"
+              >
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Select Tenant</span>
+              </button>
+              <span *ngIf="ws.productId === activeProductId" class="d-flex align-items-center gap-1 fw-bold" style="color:var(--shg-primary)">
+                <i class="bi bi-check-circle-fill"></i>
+                <span class="shg-caption fw-bold">Selected Tenant</span>
+              </span>
+            </div>
+
+          </mat-card>
+        </div>
+
+      </div>
+    </mat-card>
+  </div>
+
+</div>

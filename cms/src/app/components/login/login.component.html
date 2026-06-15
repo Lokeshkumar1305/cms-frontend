@@ -1,0 +1,121 @@
+<div class="login-wrapper d-flex align-items-center justify-content-center">
+
+  <div class="login-panel">
+
+    <!-- Left decorative strip -->
+    <div class="login-accent d-none d-md-flex flex-column justify-content-between p-5">
+      <div>
+        <div class="brand-mark d-flex align-items-center justify-content-center mb-4">
+          <i class="bi bi-ticket-detailed-fill text-white fs-2"></i>
+        </div>
+        <h2 class="accent-title">Case Management<br>Platform</h2>
+        <p class="accent-sub mt-2">Unified approval workflows, multi-tenant partitions, and real-time case tracking.</p>
+      </div>
+      <div class="accent-footer">
+        <div class="d-flex flex-column gap-2">
+          <div class="accent-stat">
+            <span class="accent-stat-value">6+</span>
+            <span class="accent-stat-label">Workflow Tiers</span>
+          </div>
+          <div class="accent-stat">
+            <span class="accent-stat-value">100%</span>
+            <span class="accent-stat-label">Audit Trail Coverage</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="login-form-side d-flex align-items-center justify-content-center p-4 p-md-5">
+      <div class="login-form-inner w-100">
+
+        <!-- Mobile brand badge -->
+        <div class="text-center mb-4 d-md-none">
+          <div class="brand-badge-sm d-inline-flex align-items-center justify-content-center mb-3">
+            <i class="bi bi-ticket-detailed-fill text-white fs-4"></i>
+          </div>
+        </div>
+
+        <!-- Heading -->
+        <div class="mb-4">
+          <h1 class="login-heading mb-1">Welcome back</h1>
+          <p class="login-sub m-0">Sign in to your operator account to continue.</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div *ngIf="errorMessage" class="shg-alert-error d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
+        </div>
+
+        <!-- Login Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+
+          <!-- Email -->
+          <div class="field-group">
+            <label class="field-label">Email address</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <i class="bi bi-envelope" matPrefix></i>
+              <input
+                matInput
+                type="email"
+                formControlName="email"
+                placeholder="you@organisation.in"
+                [disabled]="isSubmitting"
+              />
+              <mat-error *ngIf="loginForm.get('email')?.hasError('required')">Email address is required.</mat-error>
+              <mat-error *ngIf="loginForm.get('email')?.hasError('email')">Please enter a valid email address.</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group">
+            <label class="field-label">Password</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <i class="bi bi-lock" matPrefix></i>
+              <input
+                matInput
+                [type]="hidePassword ? 'password' : 'text'"
+                formControlName="password"
+                placeholder="••••••••"
+                [disabled]="isSubmitting"
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                (click)="hidePassword = !hidePassword"
+                [attr.aria-label]="hidePassword ? 'Show password' : 'Hide password'"
+              >
+                <i class="bi" [class.bi-eye-slash]="hidePassword" [class.bi-eye]="!hidePassword"></i>
+              </button>
+              <mat-error *ngIf="loginForm.get('password')?.hasError('required')">Password is required.</mat-error>
+              <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">Minimum 6 characters required.</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Remember + Forgot -->
+          <div class="d-flex justify-content-between align-items-center mb-4 mt-1">
+            <mat-checkbox class="remember-check">Remember me</mat-checkbox>
+            <a href="javascript:void(0)" class="forgot-link">Forgot Password?</a>
+          </div>
+
+          <!-- Submit -->
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="w-100 submit-btn"
+            [disabled]="isSubmitting"
+          >
+            <mat-spinner diameter="18" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+            <span>{{ isSubmitting ? 'Verifying credentials…' : 'Sign In' }}</span>
+          </button>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<aside class="shg-sidenav d-flex flex-column h-100" [class.collapsed]="isCollapsed">
+
+  <!-- Brand Header -->
+  <div class="sidenav-header d-flex align-items-center border-bottom px-3 py-3"
+    [class.justify-content-center]="isCollapsed"
+    [class.gap-2]="!isCollapsed"
+  >
+    <div class="brand-logo d-flex align-items-center justify-content-center text-white">
+      <i class="bi bi-ticket-detailed-fill fs-5"></i>
+    </div>
+    <span class="brand-text shg-title m-0 fw-bold" *ngIf="!isCollapsed">Case Management</span>
+  </div>
+
+  <!-- Navigation -->
+  <mat-nav-list class="nav-links-container flex-grow-1 py-2 px-2" disableRipple>
+    <a
+      *ngFor="let item of navItems"
+      mat-list-item
+      [routerLink]="['/' + item.route]"
+      routerLinkActive="active"
+      class="nav-link-item"
+      [attr.title]="item.label"
+    >
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center gap-3">
+          <div class="icon-box d-flex align-items-center justify-content-center">
+            <i class="bi" [ngClass]="item.icon"></i>
+          </div>
+          <span class="nav-label shg-body fw-semibold m-0" *ngIf="!isCollapsed">{{ item.label }}</span>
+        </div>
+        <span
+          *ngIf="item.badge && !isCollapsed"
+          class="shg-pill {{ item.badge.class }} badge-text"
+        >
+          {{ item.badge.text }}
+        </span>
+      </div>
+    </a>
+  </mat-nav-list>
+
+  <!-- Footer -->
+  <mat-divider *ngIf="!isCollapsed"></mat-divider>
+  <div class="sidenav-footer p-3 d-flex align-items-center" *ngIf="!isCollapsed">
+    <div class="d-flex align-items-center gap-2">
+      <div class="footer-dot"></div>
+      <span class="shg-caption">V1.0.0 · Production</span>
+    </div>
+  </div>
+
+</aside>

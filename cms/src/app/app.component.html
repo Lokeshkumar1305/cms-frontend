@@ -1,0 +1,22 @@
+<ng-container *ngIf="!(isLoggedIn$ | async); else mainLayout">
+  <!-- Show full screen login view when not authenticated -->
+  <app-login></app-login>
+</ng-container>
+
+<ng-template #mainLayout>
+  <div class="app-layout-root d-flex overflow-hidden">
+    <!-- Left Sidebar Navigation -->
+    <app-sidenav [isCollapsed]="isSidebarCollapsed"></app-sidenav>
+    
+    <!-- Right Panel (Header + Main Content Router Outlet) -->
+    <div class="d-flex flex-column flex-grow-1 h-100 overflow-hidden app-right-panel">
+      <!-- Top Header -->
+      <app-header (toggleSidebar)="toggleSidebar()"></app-header>
+      
+      <!-- Main Content Viewport -->
+      <main class="main-content flex-grow-1 p-4 overflow-y-auto">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  </div>
+</ng-template>

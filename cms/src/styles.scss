@@ -1,0 +1,732 @@
+// Angular Material custom theme — must be first (Dart Sass @use rule)
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// ---------------------------------------------------------------------------
+// SHG Custom Palettes
+// ---------------------------------------------------------------------------
+
+$shg-primary-palette: (
+  50:  #e2ebf4,
+  100: #b7cde3,
+  200: #87acd0,
+  300: #578bbc,
+  400: #3272ae,
+  500: #0F4C81,
+  600: #0d4579,
+  700: #0b3b6e,
+  800: #083162,
+  900: #051f50,
+  A100: #9bb8ff,
+  A200: #6892ff,
+  A400: #356bff,
+  A700: #1a57ff,
+  contrast: (
+    50:  rgba(0,0,0,.87),
+    100: rgba(0,0,0,.87),
+    200: rgba(0,0,0,.87),
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(0,0,0,.87),
+    A200: white,
+    A400: white,
+    A700: white,
+  )
+);
+
+$shg-accent-palette: (
+  50:  #e0f5f2,
+  100: #b3e5da,
+  200: #80d4c1,
+  300: #4dc3a8,
+  400: #26b594,
+  500: #0D7C66,
+  600: #0b7060,
+  700: #09605a,
+  800: #075053,
+  900: #043844,
+  A100: #64ffdb,
+  A200: #1de9b7,
+  A400: #00bfa3,
+  A700: #00897b,
+  contrast: (
+    50:  rgba(0,0,0,.87),
+    100: rgba(0,0,0,.87),
+    200: rgba(0,0,0,.87),
+    300: rgba(0,0,0,.87),
+    400: rgba(0,0,0,.87),
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: rgba(0,0,0,.87),
+    A200: rgba(0,0,0,.87),
+    A400: rgba(0,0,0,.87),
+    A700: rgba(0,0,0,.87),
+  )
+);
+
+$shg-primary:  mat.define-palette($shg-primary-palette, 500);
+$shg-accent:   mat.define-palette($shg-accent-palette,  500);
+$shg-warn:     mat.define-palette(mat.$red-palette, 600);
+
+$shg-theme: mat.define-light-theme((
+  color: (
+    primary: $shg-primary,
+    accent:  $shg-accent,
+    warn:    $shg-warn,
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($shg-theme);
+
+// ---------------------------------------------------------------------------
+// External CSS imports (must come after @use/@include)
+// ---------------------------------------------------------------------------
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// ---------------------------------------------------------------------------
+// CSS Custom Properties (SHG Design Tokens)
+// ---------------------------------------------------------------------------
+:root {
+  --shg-primary: #0F4C81;
+  --shg-primary-hover: #0a355c;
+  --shg-accent: #0D7C66;
+  --shg-ink-900: #0B1220;
+  --shg-ink-500: #6B7794;
+  --shg-ink-200: #E4E7EE;
+  --shg-canvas: #F5F6FA;
+  --shg-success: #16A34A;
+  --shg-warning: #D97706;
+  --shg-error: #DC2626;
+  --shg-info: #2563EB;
+  --shg-violet: #7C3AED;
+  --shg-teal: #0D9488;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--shg-canvas);
+  color: var(--shg-ink-900);
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+}
+
+// ---------------------------------------------------------------------------
+// Typography Classes
+// ---------------------------------------------------------------------------
+.shg-display {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--shg-ink-900);
+  letter-spacing: -0.5px;
+}
+
+.shg-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--shg-ink-900);
+}
+
+.shg-body {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--shg-ink-900);
+}
+
+.shg-caption {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--shg-ink-500);
+}
+
+.shg-mono {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: var(--shg-ink-500);
+}
+
+// ---------------------------------------------------------------------------
+// KPI Card Component
+// ---------------------------------------------------------------------------
+.shg-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--shg-ink-200) !important;
+  border-radius: 12px !important;
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(11, 18, 32, 0.08) !important;
+  }
+
+  .kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .kpi-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--shg-ink-500);
+    margin: 0;
+  }
+
+  .kpi-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--shg-canvas);
+    color: var(--shg-ink-500);
+
+    &.primary {
+      background-color: rgba(15, 76, 129, 0.08);
+      color: var(--shg-primary);
+    }
+    &.accent {
+      background-color: rgba(13, 124, 102, 0.08);
+      color: var(--shg-accent);
+    }
+    &.warning {
+      background-color: rgba(217, 119, 6, 0.08);
+      color: var(--shg-warning);
+    }
+    &.error {
+      background-color: rgba(220, 38, 38, 0.08);
+      color: var(--shg-error);
+    }
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--shg-ink-900);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  .kpi-trend {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+
+    &.positive { color: var(--shg-success); }
+    &.negative { color: var(--shg-error); }
+
+    .trend-text { color: var(--shg-ink-500); }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Status Pills / Badges
+// ---------------------------------------------------------------------------
+.shg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &.ok    { background-color: rgba(22, 163, 74, 0.12);  color: var(--shg-success); }
+  &.warn  { background-color: rgba(217, 119, 6, 0.12);  color: var(--shg-warning); }
+  &.err   { background-color: rgba(220, 38, 38, 0.12);  color: var(--shg-error); }
+  &.info  { background-color: rgba(37, 99, 235, 0.12);  color: var(--shg-info); }
+  &.gray  { background-color: rgba(107, 119, 148, 0.12); color: var(--shg-ink-500); }
+  &.violet { background-color: rgba(124, 58, 237, 0.12); color: var(--shg-violet); }
+  &.teal  { background-color: rgba(13, 148, 136, 0.12); color: var(--shg-teal); }
+}
+
+// ---------------------------------------------------------------------------
+// Material Button Color Overrides (map to SHG palette)
+// ---------------------------------------------------------------------------
+
+// Flat / Raised primary button
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary {
+  --mdc-filled-button-container-color: var(--shg-primary);
+  --mdc-filled-button-label-text-color: #ffffff;
+  --mdc-protected-button-container-color: var(--shg-primary);
+  --mdc-protected-button-label-text-color: #ffffff;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    --mdc-filled-button-container-color: var(--shg-primary-hover);
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Outlined / stroked primary button
+.mat-mdc-outlined-button.mat-primary {
+  --mdc-outlined-button-outline-color: var(--shg-primary);
+  --mdc-outlined-button-label-text-color: var(--shg-primary);
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background-color: rgba(15, 76, 129, 0.04);
+  }
+}
+
+// Text primary button
+.mat-mdc-button.mat-primary {
+  --mdc-text-button-label-text-color: var(--shg-primary);
+  font-weight: 600;
+}
+
+// Flat accent button
+.mat-mdc-unelevated-button.mat-accent,
+.mat-mdc-raised-button.mat-accent {
+  --mdc-filled-button-container-color: var(--shg-accent);
+  --mdc-filled-button-label-text-color: #ffffff;
+  font-weight: 600;
+}
+
+// Warn button
+.mat-mdc-unelevated-button.mat-warn,
+.mat-mdc-raised-button.mat-warn {
+  --mdc-filled-button-container-color: var(--shg-error);
+  --mdc-filled-button-label-text-color: #ffffff;
+  font-weight: 600;
+}
+
+// ---------------------------------------------------------------------------
+// Material Form Field Overrides
+// ---------------------------------------------------------------------------
+.mat-mdc-form-field {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+
+  // ── Compact height ──────────────────────────────────────────────────────
+  .mat-mdc-form-field-infix {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    min-height: 42px !important;
+  }
+
+  // ── 8px border radius ───────────────────────────────────────────────────
+  .mdc-notched-outline__leading {
+    border-radius: 8px 0 0 8px !important;
+    min-width: 10px !important;
+  }
+  .mdc-notched-outline__trailing {
+    border-radius: 0 8px 8px 0 !important;
+  }
+
+  // ── Border colours ──────────────────────────────────────────────────────
+  &.mat-form-field-appearance-outline {
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled) {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--shg-ink-200);
+      }
+    }
+
+    .mdc-text-field--focused:not(.mdc-text-field--disabled) {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--shg-primary);
+        border-width: 2px;
+      }
+    }
+  }
+}
+
+// ── Prefix icon spacing (push away from left border) ──────────────────────
+.mat-mdc-form-field-icon-prefix {
+  padding-left: 12px !important;
+  padding-right: 4px !important;
+  color: var(--shg-ink-500);
+}
+
+// ── Suffix icon spacing ────────────────────────────────────────────────────
+.mat-mdc-form-field-icon-suffix {
+  padding-right: 8px !important;
+  color: var(--shg-ink-500);
+}
+
+// Clear MDC default tinted background on all outlined fields
+.mat-mdc-text-field-wrapper {
+  background-color: #ffffff !important;
+}
+
+.mat-mdc-form-field-focus-overlay {
+  background-color: transparent !important;
+}
+
+// Focused label colour
+.mdc-text-field--focused .mdc-floating-label {
+  color: var(--shg-primary) !important;
+}
+
+// Error state
+.mdc-text-field--invalid:not(.mdc-text-field--disabled) {
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--shg-error) !important;
+  }
+}
+
+// Input text font
+.mat-mdc-input-element {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 14px !important;
+}
+
+// ---------------------------------------------------------------------------
+// Material Checkbox & Slide Toggle
+// ---------------------------------------------------------------------------
+.mat-mdc-checkbox {
+  --mdc-checkbox-selected-checkmark-color: #fff;
+  --mdc-checkbox-selected-focus-icon-color: var(--shg-primary);
+  --mdc-checkbox-selected-hover-icon-color: var(--shg-primary);
+  --mdc-checkbox-selected-icon-color: var(--shg-primary);
+  --mdc-checkbox-selected-pressed-icon-color: var(--shg-primary);
+}
+
+.mat-mdc-slide-toggle {
+  --mdc-switch-selected-handle-color: var(--shg-primary);
+  --mdc-switch-selected-track-color: rgba(15, 76, 129, 0.4);
+  --mdc-switch-selected-focus-handle-color: var(--shg-primary);
+  --mdc-switch-selected-hover-handle-color: var(--shg-primary);
+  --mdc-switch-selected-pressed-handle-color: var(--shg-primary-hover);
+}
+
+// ---------------------------------------------------------------------------
+// Material Select
+// ---------------------------------------------------------------------------
+.mat-mdc-select-panel {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  color: var(--shg-primary) !important;
+}
+
+// ---------------------------------------------------------------------------
+// Material Table
+// ---------------------------------------------------------------------------
+.mat-mdc-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.mat-mdc-header-row {
+  background-color: var(--shg-canvas) !important;
+}
+
+.mat-mdc-header-cell {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--shg-ink-500) !important;
+  border-bottom: 1px solid var(--shg-ink-200) !important;
+  padding: 14px 20px !important;
+}
+
+.mat-mdc-cell {
+  font-size: 14px !important;
+  color: var(--shg-ink-900) !important;
+  border-bottom: 1px solid var(--shg-ink-200) !important;
+  padding: 16px 20px !important;
+  vertical-align: middle;
+}
+
+.mat-mdc-row:last-child .mat-mdc-cell {
+  border-bottom: none !important;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  background-color: rgba(245, 246, 250, 0.6) !important;
+}
+
+.mat-sort-header-arrow {
+  color: var(--shg-ink-500);
+}
+
+// ---------------------------------------------------------------------------
+// Material Paginator
+// ---------------------------------------------------------------------------
+.mat-mdc-paginator {
+  background: transparent !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 12px !important;
+  color: var(--shg-ink-500) !important;
+  border-top: 1px solid var(--shg-ink-200);
+}
+
+.mat-mdc-paginator-range-label {
+  font-size: 12px !important;
+  color: var(--shg-ink-500) !important;
+}
+
+// ---------------------------------------------------------------------------
+// Material Card Overrides
+// ---------------------------------------------------------------------------
+.mat-mdc-card {
+  border: 1px solid var(--shg-ink-200) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+  border-radius: 12px !important;
+}
+
+// ---------------------------------------------------------------------------
+// Material Drawer / Sidenav
+// ---------------------------------------------------------------------------
+.mat-drawer-container {
+  background-color: var(--shg-canvas) !important;
+}
+
+.mat-drawer {
+  background-color: #ffffff !important;
+  border-right: 1px solid var(--shg-ink-200) !important;
+}
+
+// ---------------------------------------------------------------------------
+// Material Snack Bar
+// ---------------------------------------------------------------------------
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--shg-ink-900);
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  border-radius: 8px !important;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy helper button classes (kept for backward compat, map to Material)
+// ---------------------------------------------------------------------------
+.shg-btn-primary {
+  background-color: var(--shg-primary);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background-color: var(--shg-primary-hover); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:disabled {
+    background-color: var(--shg-ink-200);
+    color: var(--shg-ink-500);
+    cursor: not-allowed;
+  }
+}
+
+.shg-btn-ghost {
+  background-color: transparent;
+  color: var(--shg-ink-900);
+  border: 1px solid var(--shg-ink-200);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--shg-primary);
+    background-color: rgba(15, 76, 129, 0.04);
+    color: var(--shg-primary);
+  }
+}
+
+.shg-btn-subtle {
+  background-color: var(--shg-canvas);
+  color: var(--shg-ink-500);
+  border: none;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: var(--shg-ink-200);
+    color: var(--shg-ink-900);
+  }
+}
+
+.shg-btn-danger {
+  background-color: var(--shg-error);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: opacity 0.2s ease;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { opacity: 0.9; }
+}
+
+// ---------------------------------------------------------------------------
+// External field labels (label placed above mat-form-field)
+// ---------------------------------------------------------------------------
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--shg-ink-500);
+  letter-spacing: 0.1px;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.field-group {
+  margin-bottom: 20px;
+}
+
+// Remove the notch gap in the outline when there is no mat-label
+.mdc-notched-outline__notch {
+  border-right: none !important;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy form group styles
+// ---------------------------------------------------------------------------
+.shg-form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--shg-ink-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .shg-input-wrapper {
+    position: relative;
+
+    .shg-input-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--shg-ink-500);
+      pointer-events: none;
+      font-size: 16px;
+    }
+
+    input.shg-input,
+    select.shg-input,
+    textarea.shg-input {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--shg-ink-900);
+      background-color: #ffffff;
+      border: 1px solid var(--shg-ink-200);
+      border-radius: 6px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      font-family: 'Inter', sans-serif;
+
+      &.has-icon { padding-left: 38px; }
+
+      &:focus {
+        outline: none;
+        border-color: var(--shg-primary);
+        box-shadow: 0 0 0 3px rgba(15, 76, 129, 0.1);
+      }
+    }
+
+    &.has-error input.shg-input {
+      border-color: var(--shg-error);
+      &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+    }
+  }
+
+  .shg-error-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--shg-error);
+    margin-top: 6px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legacy table container
+// ---------------------------------------------------------------------------
+.shg-table-container {
+  background: #ffffff;
+  border: 1px solid var(--shg-ink-200);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+
+    th {
+      background-color: var(--shg-canvas);
+      padding: 14px 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--shg-ink-500);
+      border-bottom: 1px solid var(--shg-ink-200);
+      text-align: left;
+    }
+
+    td {
+      padding: 16px 20px;
+      font-size: 14px;
+      color: var(--shg-ink-900);
+      border-bottom: 1px solid var(--shg-ink-200);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: rgba(245, 246, 250, 0.5); }
+  }
+}

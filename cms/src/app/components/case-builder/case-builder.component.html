@@ -1,0 +1,394 @@
+<div class="mb-4">
+  <h1 class="shg-display mb-1">Case Configuration Builder</h1>
+  <p class="shg-caption">Register and design pipeline flow hierarchies, SLA settings, and multi-level approvals.</p>
+</div>
+
+<!-- Tenant Context Guard -->
+<div *ngIf="!activeProductId" class="my-4">
+  <mat-card class="p-4 text-center border-warning-card">
+    <i class="bi bi-shield-lock-fill fs-1 d-block mb-3" style="color:var(--shg-warning)"></i>
+    <h3 class="shg-title">Tenant Context Required</h3>
+    <p class="shg-body mx-auto mb-3" style="max-width:480px; color:var(--shg-ink-500)">
+      No Product Workspace is currently active. To configure case pathways, please provision or select an active workspace partition.
+    </p>
+    <a routerLink="/product-config" mat-flat-button color="primary" class="gap-2">
+      <i class="bi bi-hdd-network"></i>
+      <span>Go to Product Configurations</span>
+    </a>
+  </mat-card>
+</div>
+
+<div *ngIf="activeProductId">
+
+  <!-- Active Tenant Banner -->
+  <div class="shg-tenant-banner d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 rounded-3 mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
+      <span class="shg-body m-0">Active Tenant Scope: <strong>{{ activeProductName }}</strong></span>
+    </div>
+    <span class="shg-mono px-3 py-1 rounded" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
+  </div>
+
+  <!-- Success / Error Messages -->
+  <div *ngIf="successMessage" class="shg-alert-banner ok d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+    <i class="bi bi-check-circle-fill"></i>
+    <span class="shg-caption m-0 fw-semibold">{{ successMessage }}</span>
+  </div>
+  <div *ngIf="errorMessage" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Left: Create OR Update Form -->
+    <div class="col-12 col-xl-5">
+
+      <!-- UPDATE Mode -->
+      <mat-card *ngIf="selectedConfigForUpdate" class="p-4 border-primary-card position-relative">
+        <button mat-icon-button class="position-absolute top-0 end-0 m-2" (click)="selectedConfigForUpdate = null" aria-label="Cancel">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <h2 class="shg-title mb-1 pb-2 border-bottom" style="color:var(--shg-primary)">Update Configuration Node</h2>
+        <p class="shg-caption mb-3">Editing: <code>{{ selectedConfigForUpdate.configPath }}</code></p>
+
+        <form [formGroup]="updateForm" (ngSubmit)="onUpdateConfig()" novalidate>
+
+          <div class="field-group">
+            <label class="field-label">Node name</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput formControlName="nodeName" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Global SLA timeout (minutes)</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
+            </mat-form-field>
+          </div>
+
+          <!-- Notification Panel -->
+          <div class="notify-panel p-3 rounded-3 mt-3 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="fw-semibold shg-body">Enable Case Notifications</span>
+              <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
+            </div>
+
+            <div *ngIf="updateForm.get('notifyEnabled')?.value">
+              <div class="field-group">
+                <label class="field-label">Target email address</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="email" formControlName="notifyEmail" />
+                </mat-form-field>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label">Target mobile number</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="text" formControlName="notifyMobile" />
+                </mat-form-field>
+              </div>
+
+              <div class="d-flex gap-4 mt-1">
+                <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL Channel</mat-checkbox>
+                <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS Channel</mat-checkbox>
+              </div>
+            </div>
+          </div>
+
+          <button mat-flat-button color="primary" type="submit" class="w-100 action-btn" [disabled]="isSubmitting">
+            <mat-spinner diameter="18" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+            <span>Update Case Node</span>
+          </button>
+
+        </form>
+      </mat-card>
+
+      <!-- CREATE Mode -->
+      <mat-card *ngIf="!selectedConfigForUpdate" class="p-4 h-100">
+        <h2 class="shg-title mb-3 pb-2 border-bottom">Create Case Configuration Node</h2>
+
+        <form [formGroup]="createForm" (ngSubmit)="onCreateConfig()" novalidate>
+
+          <!-- Section A & B: Path & Workflow -->
+          <div class="mb-4">
+            <h3 class="shg-body fw-bold mb-1">Path & workflow</h3>
+            <p class="shg-caption text-muted mb-3">Section A & B — routing path and BPMN mappings.</p>
+            
+            <!-- Routing Path Input & Add Node Button -->
+            <label class="field-label">Routing path</label>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  placeholder="Add node, e.g. LOAN"
+                  [(ngModel)]="newNodeName"
+                  [ngModelOptions]="{standalone: true}"
+                  (keyup.enter)="addNode()"
+                />
+              </mat-form-field>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="add-node-btn"
+                (click)="addNode()"
+              >
+                + Add Node
+              </button>
+            </div>
+
+            <!-- Path Node Tags List -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3" *ngIf="nodes.length > 0">
+              <ng-container *ngFor="let node of nodes; let i = index; let last = last">
+                <span class="path-node-tag d-flex align-items-center gap-2 px-3 py-2 rounded border">
+                  <span class="fw-semibold text-uppercase" style="font-size: 12px; color: var(--shg-ink-800);">{{ node }}</span>
+                  <i class="bi bi-x cursor-pointer text-muted font-bold" (click)="removeNode(i)" style="font-size: 16px; line-height: 1;"></i>
+                </span>
+                <span *ngIf="!last" class="path-node-separator text-muted px-1">
+                  <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+                </span>
+              </ng-container>
+            </div>
+
+            <!-- Compiled configPath dashed box -->
+            <div class="compiled-path-box p-3 rounded mb-2" *ngIf="nodes.length > 0">
+              configPath = "{{ nodes.join('.') }}"
+            </div>
+
+            <p class="shg-caption text-muted mb-4">Add nodes one at a time; they compile into a dotted configPath.</p>
+          </div>
+
+          <!-- Workflow keys & BPMN mappings -->
+          <div class="mb-4">
+            <h3 class="shg-body fw-bold mb-3">Workflow keys &rarr; BPMN file</h3>
+            
+            <div class="d-flex flex-column gap-3">
+              <div *ngFor="let item of nodeWorkflows; let wIdx = index" class="workflow-row-container p-3 rounded-3 border bg-white">
+                
+                <!-- Main Node Mapping Row -->
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <div class="flex-shrink-0">
+                    <span class="path-node-badge px-3 py-1 rounded border fw-semibold text-uppercase">{{ item.nodeName }}</span>
+                  </div>
+                  <div class="flex-shrink-0">
+                    <span class="locked-badge px-2 py-1 rounded fw-bold">LOCKED</span>
+                  </div>
+                  <div class="flex-grow-1">
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      placeholder="bpmn-file-name" 
+                      [(ngModel)]="item.bpmnFile"
+                      [ngModelOptions]="{standalone: true}"
+                    />
+                  </div>
+                  <div class="flex-shrink-0">
+                    <button type="button" class="btn remove-row-btn fw-semibold" (click)="removeNode(wIdx)">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Substage Overrides List -->
+                <div class="substage-list-container mt-3 ms-4 ps-2 border-start">
+                  <div class="d-flex flex-column gap-2">
+                    <div *ngFor="let override of item.substageOverrides; let oIdx = index" class="d-flex align-items-center gap-2">
+                      <div style="width: 120px;">
+                        <input 
+                          type="text" 
+                          class="form-control form-control-sm" 
+                          placeholder="EXPRESS" 
+                          [(ngModel)]="override.substage"
+                          [ngModelOptions]="{standalone: true}"
+                        />
+                      </div>
+                      <div class="flex-grow-1">
+                        <input 
+                          type="text" 
+                          class="form-control form-control-sm" 
+                          placeholder="retail-express-flow" 
+                          [(ngModel)]="override.bpmnFile"
+                          [ngModelOptions]="{standalone: true}"
+                        />
+                      </div>
+                      <div class="flex-shrink-0">
+                        <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeSubstageOverride(wIdx, oIdx)" aria-label="Delete">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Add Substage Override Button -->
+                  <div class="mt-2">
+                    <button 
+                      type="button" 
+                      class="btn btn-sm add-substage-btn" 
+                      (click)="addSubstageOverride(wIdx)"
+                    >
+                      + Add Substage Override
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1b: Depth Level -->
+          <div class="mb-4">
+            <label class="field-label">Depth level</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput type="number" formControlName="currentDepthLevel" />
+            </mat-form-field>
+          </div>
+
+          <!-- Section 2: Node Title -->
+          <div class="mb-4">
+            <label class="field-label">Node title description</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput formControlName="nodeName" />
+              <mat-error *ngIf="createForm.get('nodeName')?.invalid && createForm.get('nodeName')?.touched">Required.</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Section 3: SLA & Fallback -->
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <label class="field-label">SLA timeout (minutes)</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
+              </mat-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="field-label">Fallback admin user</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput type="text" formControlName="fallbackAdminUserId" />
+              </mat-form-field>
+            </div>
+            <div class="col-12">
+              <label class="field-label">Fallback admin group ID</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput type="text" formControlName="fallbackAdminGroupId" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Notification Settings -->
+          <div class="notify-panel p-3 rounded-3 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <span class="fw-semibold shg-body">Enable System Alerts</span>
+              <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
+            </div>
+
+            <div *ngIf="createForm.get('notifyEnabled')?.value">
+              <div class="field-group">
+                <label class="field-label">Target email address</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="email" formControlName="notifyEmail" />
+                </mat-form-field>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Target mobile number</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="text" formControlName="notifyMobile" />
+                </mat-form-field>
+              </div>
+              <div class="d-flex gap-4 mt-1">
+                <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
+                <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
+              </div>
+            </div>
+          </div>
+
+          <button mat-flat-button color="primary" type="submit" class="w-100 action-btn" [disabled]="isSubmitting">
+            <mat-spinner diameter="18" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+            <span>Register Case Workflow Configuration</span>
+          </button>
+
+        </form>
+      </mat-card>
+    </div>
+
+    <!-- Right: Config Node List -->
+    <div class="col-12 col-xl-7">
+      <mat-card class="p-4 h-100 d-flex flex-column">
+        <h2 class="shg-title mb-3 pb-2 border-bottom">Registered Configuration Nodes</h2>
+
+        <div class="flex-grow-1 overflow-auto" style="max-height: 540px;">
+
+          <div *ngIf="configurations.length === 0" class="text-center py-5">
+            <i class="bi bi-sliders fs-1 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+            <span class="shg-caption">No configurations registered for this product.</span>
+          </div>
+
+          <div class="d-flex flex-column gap-3">
+            <mat-card
+              *ngFor="let cfg of configurations"
+              class="config-node-card p-3 position-relative"
+              [class.active-edit-card]="selectedConfigForUpdate?.id === cfg.id"
+            >
+              <div class="position-absolute top-0 end-0 m-3">
+                <span class="shg-pill info">Depth: {{ cfg.currentDepthLevel }}</span>
+              </div>
+
+              <h4 class="shg-title m-0 pe-5">{{ cfg.nodeName }}</h4>
+              <div class="mt-2">
+                <span class="shg-caption d-block">Config Path: <code style="color:var(--shg-ink-900)">{{ cfg.configPath }}</code></span>
+                <span class="shg-caption d-block mt-1">SLA Limit: <strong style="color:var(--shg-ink-900)">{{ cfg.globalSlaTimeoutMinutes }} mins</strong></span>
+              </div>
+
+              <!-- Workflow Keys -->
+              <div class="mt-2 d-flex flex-wrap gap-2 align-items-center" *ngIf="cfg.workflowKeys">
+                <span class="shg-caption">Workflows:</span>
+                <span
+                  *ngFor="let entry of cfg.workflowKeys | keyvalue"
+                  class="shg-pill gray shg-mono"
+                  style="font-size: 10px;"
+                >
+                  {{ entry.key }}: {{ entry.value }}
+                </span>
+              </div>
+
+              <!-- Approval Hierarchy -->
+              <div class="mt-2 pt-2 border-top" *ngIf="cfg.approvalSettings">
+                <span class="shg-caption fw-bold d-block mb-1">Approval Hierarchy:</span>
+                <div class="d-flex flex-column gap-1">
+                  <div *ngFor="let tier of cfg.approvalSettings.tiers" class="d-flex align-items-center gap-2">
+                    <span class="shg-pill gray shg-mono">Level {{ tier.level }}</span>
+                    <span class="shg-caption">{{ tier.tierName }} (<code style="color:var(--shg-primary)">{{ tier.authorizedGroups.join(', ') }}</code>)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notification Status -->
+              <div class="mt-2 pt-2 border-top">
+                <span class="shg-caption fw-bold d-block">Notifications:</span>
+                <span class="shg-pill" [class.ok]="cfg.notificationSettings.enabled" [class.err]="!cfg.notificationSettings.enabled">
+                  {{ cfg.notificationSettings.enabled ? 'ENABLED' : 'DISABLED' }}
+                </span>
+                <span class="shg-caption ms-2" *ngIf="cfg.notificationSettings.enabled">
+                  Channels: {{ cfg.notificationSettings.channels.join(', ') }} | Target: {{ cfg.notificationSettings.targetEmailId }}
+                </span>
+              </div>
+
+              <!-- Actions -->
+              <div class="mt-3 d-flex align-items-center justify-content-between pt-2 border-top">
+                <span class="shg-caption">ID: <code style="color:var(--shg-ink-900)">{{ cfg.id }}</code></span>
+                <button mat-stroked-button color="primary" (click)="selectConfigForEdit(cfg)" class="gap-1">
+                  <i class="bi bi-pencil"></i>
+                  <span>Edit Node</span>
+                </button>
+              </div>
+
+            </mat-card>
+          </div>
+
+        </div>
+      </mat-card>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,132 @@
+.shg-sidenav {
+  width: 240px;
+  background-color: #ffffff;
+  border-right: 1px solid var(--shg-ink-200);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  white-space: nowrap;
+
+  .sidenav-header {
+    height: 70px;
+    background-color: #ffffff;
+    
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background-color: var(--shg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .brand-text {
+      font-size: 18px;
+      color: var(--shg-primary);
+      letter-spacing: -0.3px;
+    }
+  }
+
+  &.collapsed {
+    width: 70px;
+
+    .nav-label, .badge-text, .sidenav-footer {
+      display: none !important;
+    }
+
+    .nav-link-item {
+      justify-content: center;
+      padding: 12px;
+    }
+  }
+}
+
+.nav-link-item {
+  color: var(--shg-ink-500);
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+
+  .icon-box {
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    color: var(--shg-primary);
+    background-color: rgba(15, 76, 129, 0.04);
+    
+    .icon-box {
+      color: var(--shg-primary);
+      transform: scale(1.05);
+    }
+
+    .nav-label {
+      color: var(--shg-primary) !important;
+    }
+  }
+
+  &.active {
+    color: var(--shg-primary);
+    background-color: rgba(15, 76, 129, 0.08);
+    box-shadow: none;
+
+    .icon-box {
+      color: var(--shg-primary);
+    }
+
+    .nav-label {
+      color: var(--shg-primary) !important;
+    }
+
+    &:hover {
+      background-color: rgba(15, 76, 129, 0.12);
+    }
+
+    .shg-pill {
+      background-color: var(--shg-primary);
+      color: #ffffff;
+    }
+  }
+}
+
+.badge-text {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.sidenav-footer {
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.footer-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--shg-success);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}

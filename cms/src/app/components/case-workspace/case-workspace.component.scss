@@ -1,0 +1,178 @@
+.border-warning-card {
+  border: 1px solid var(--shg-warning) !important;
+  border-radius: 12px !important;
+}
+
+.shg-tenant-banner {
+  background-color: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.shg-alert-banner {
+  &.ok {
+    background-color: rgba(22, 163, 74, 0.08);
+    color: var(--shg-success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+  }
+  &.err {
+    background-color: rgba(220, 38, 38, 0.08);
+    color: var(--shg-error);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+}
+
+// Queue table card — remove default mat-card padding
+.queue-table-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 12px !important;
+
+  ::ng-deep .mat-mdc-table {
+    border-radius: 0;
+  }
+}
+
+.selected-row {
+  background-color: rgba(15, 76, 129, 0.04) !important;
+}
+
+.audit-btn {
+  font-size: 12px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  min-width: unset !important;
+
+  ::ng-deep .mdc-button__label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+}
+
+.filter-btn {
+  height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+// Compact form fields in filter panel and ingest form
+.compact-field {
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    min-height: unset !important;
+  }
+
+  ::ng-deep .mdc-text-field--outlined {
+    height: 44px;
+  }
+}
+
+.detail-drawer {
+  border-radius: 12px !important;
+}
+
+// Audit timeline
+.audit-timeline {
+  padding-left: 8px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 5px;
+    bottom: 5px;
+    width: 2px;
+    background-color: var(--shg-ink-200);
+  }
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0 !important;
+}
+
+.timeline-dot-wrapper {
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--shg-primary);
+  margin-top: 6px;
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 4px rgba(15,76,129,0.2);
+}
+
+.animate-slide {
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// Custom Pagination Bar
+.shg-pagination {
+  border-top: 1px solid var(--shg-ink-200);
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+}
+
+.shg-page-size-select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--shg-ink-200);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: var(--shg-ink-900);
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  appearance: auto;
+
+  &:focus {
+    border-color: var(--shg-primary);
+    box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.12);
+  }
+}
+
+.shg-page-btn {
+  height: 32px;
+  min-width: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--shg-ink-200);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  background: #fff;
+  color: var(--shg-ink-900);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+
+  &:hover:not(:disabled):not(.active) {
+    background: var(--shg-canvas);
+    border-color: var(--shg-ink-500);
+  }
+
+  &.active {
+    background: var(--shg-primary);
+    border-color: var(--shg-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+}
