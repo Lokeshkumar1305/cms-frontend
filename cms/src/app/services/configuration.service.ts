@@ -97,26 +97,49 @@ export class ConfigurationService {
     localStorage.setItem('mock_configs', JSON.stringify(this.mockConfigs));
   }
 
-  // Get configuration nodes filtered by product tenant
-  getConfigurationsByProduct(productId: string): Observable<CaseConfiguration[]> {
-    const headers = new HttpHeaders({
-      'X-User-Id': 'system_admin',
-      'Content-Type': 'application/json'
-    });
+  // Get configuration nodes filtered by product tenant (POST http://192.168.100.61:8091/api/cms/configuration/getall)
+  getConfigurationsByProduct(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC'): Observable<any> {
+    const headers = new HttpHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-User-Id', 'system_admin')
+      .set('X-Product-Id', productId);
 
-    return this.http.post<any>(`${this.apiUrl}/getall`, { productId }, { headers }).pipe(
+    const payload = { page, size, sortField, sortOrder };
+
+    return this.http.post<any>(`${this.apiUrl}/getall`, payload, { headers }).pipe(
       map(res => {
         if (res && res.success && res.responseObject && Array.isArray(res.responseObject)) {
           for (const cfg of res.responseObject) {
             this.syncLocalConfig(cfg);
           }
         }
-        return this.mockConfigs.filter(c => c.productId === productId);
+        return res;
       }),
       catchError(err => {
         console.warn('Backend API offline, utilizing mock configurations list.', err);
         const filtered = this.mockConfigs.filter(c => c.productId === productId);
-        return of(filtered);
+
+        // Sort
+        const sorted = [...filtered].sort((a, b) => {
+          const valA = (a as any)[sortField] || '';
+          const valB = (b as any)[sortField] || '';
+          if (typeof valA === 'string' && typeof valB === 'string') {
+            return sortOrder === 'ASC' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          }
+          return 0;
+        });
+
+        // Paginate
+        const start = (page - 1) * size;
+        const pageItems = sorted.slice(start, start + size);
+
+        return of({
+          success: true,
+          message: pageItems.length > 0 ? 'Success' : 'No data found',
+          responseObject: pageItems,
+          statusCode: 200,
+          totalCount: sorted.length
+        });
       })
     );
   }

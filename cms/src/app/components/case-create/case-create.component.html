@@ -1,0 +1,209 @@
+<!-- =========================================================
+     Scrollable area — all content except the action footer
+     ========================================================= -->
+<div class="create-scroll-area">
+
+  <!-- Page Header -->
+  <div class="mb-4 d-flex align-items-center gap-3">
+    <button mat-icon-button (click)="cancel()" class="back-btn" aria-label="Back">
+      <i class="bi bi-arrow-left" style="font-size:18px"></i>
+    </button>
+    <div>
+      <h1 class="shg-display mb-1">New Configuration</h1>
+      <p class="shg-caption">Register a case workflow pipeline for the active tenant.</p>
+    </div>
+  </div>
+
+  <!-- No Tenant Guard -->
+  <div *ngIf="!activeProductId" class="my-4">
+    <mat-card class="p-4 text-center border-warning-card">
+      <i class="bi bi-shield-lock-fill fs-1 d-block mb-3" style="color:var(--shg-warning)"></i>
+      <h3 class="shg-title">Tenant Context Required</h3>
+      <p class="shg-body mx-auto mb-3" style="max-width:480px; color:var(--shg-ink-500)">
+        No Product Workspace is currently active. Please select a workspace before creating a configuration.
+      </p>
+      <a routerLink="/product-config" mat-flat-button color="primary" class="gap-2">
+        <i class="bi bi-hdd-network"></i>
+        <span>Go to Product Configurations</span>
+      </a>
+    </mat-card>
+  </div>
+
+  <!-- Active Tenant Content -->
+  <div *ngIf="activeProductId">
+
+    <!-- Error Banner -->
+    <div *ngIf="errorMessage" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
+    </div>
+
+    <!-- Active Tenant Banner -->
+    <div class="shg-tenant-banner d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
+      <span class="shg-body m-0">Active Tenant: <strong>{{ activeProductName }}</strong></span>
+      <span class="shg-mono px-3 py-1 rounded ms-auto"
+        style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
+    </div>
+
+    <!-- Form (submit button is in the footer outside this form; Enter key still triggers ngSubmit) -->
+    <form [formGroup]="createForm" (ngSubmit)="onSubmit()" novalidate>
+      <div class="row g-4">
+
+        <!-- Left Column: Path & Workflow -->
+        <div class="col-12 col-lg-6">
+          <mat-card class="form-section-card p-4">
+
+            <div class="form-section-label">Path & Workflow</div>
+
+            <label class="field-label">Routing path</label>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                <input matInput placeholder="Add node, e.g. LOAN"
+                  [(ngModel)]="newNodeName"
+                  [ngModelOptions]="{standalone: true}"
+                  (keyup.enter)="addNode()" />
+              </mat-form-field>
+              <button mat-flat-button color="primary" type="button" class="add-node-btn" (click)="addNode()">
+                + Add
+              </button>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2" *ngIf="nodes.length > 0">
+              <ng-container *ngFor="let node of nodes; let i = index; let last = last">
+                <span class="path-node-tag d-flex align-items-center gap-1 px-2 py-1 rounded border">
+                  <span class="fw-semibold text-uppercase" style="font-size:11px">{{ node }}</span>
+                  <i class="bi bi-x cursor-pointer text-muted" (click)="removeNode(i)" style="font-size:14px; line-height:1"></i>
+                </span>
+                <span *ngIf="!last" class="text-muted"><i class="bi bi-chevron-right" style="font-size:9px"></i></span>
+              </ng-container>
+            </div>
+
+            <div class="compiled-path-box p-2 rounded mb-4" *ngIf="nodes.length > 0" style="font-size:12px">
+              {{ nodes.join('.') }}
+            </div>
+
+            <mat-divider class="mb-4"></mat-divider>
+            <div class="form-section-label">Workflow keys → BPMN file</div>
+
+            <div class="d-flex flex-column gap-2">
+              <div *ngFor="let item of nodeWorkflows; let wIdx = index" class="p-2 rounded-3 border bg-white">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="path-node-badge px-2 py-1 rounded border fw-semibold text-uppercase"
+                    style="font-size:10px">{{ item.nodeName }}</span>
+                  <span class="locked-badge rounded border fw-bold text-uppercase">LOCKED</span>
+                  <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file-name"
+                    [(ngModel)]="item.bpmnFile" [ngModelOptions]="{standalone: true}" />
+                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
+                    style="font-size:13px; text-decoration:none; white-space:nowrap;" (click)="removeNode(wIdx)">
+                    Remove
+                  </button>
+                </div>
+                <div *ngFor="let o of item.substageOverrides; let oIdx = index; let last = last"
+                  class="d-flex align-items-center gap-2 mb-2">
+                  <input type="text" class="form-control form-control-sm" style="width:130px; flex-shrink:0"
+                    placeholder="substage key" [(ngModel)]="o.substage" [ngModelOptions]="{standalone: true}" />
+                  <input type="text" class="form-control form-control-sm flex-grow-1"
+                    placeholder="bpmn-file-name" [(ngModel)]="o.bpmnFile" [ngModelOptions]="{standalone: true}" />
+                  <button *ngIf="last" type="button" mat-stroked-button class="add-substage-btn"
+                    (click)="addSubstageOverride(wIdx)">+ Add Substage Override</button>
+                </div>
+                <div *ngIf="item.substageOverrides.length === 0" class="d-flex justify-content-end">
+                  <button type="button" mat-stroked-button class="add-substage-btn"
+                    (click)="addSubstageOverride(wIdx)">+ Add Substage Override</button>
+                </div>
+              </div>
+            </div>
+
+          </mat-card>
+        </div>
+
+        <!-- Right Column: Node Settings + Notifications -->
+        <div class="col-12 col-lg-6">
+
+          <mat-card class="form-section-card p-4 mb-4">
+            <div class="form-section-label">Node Settings</div>
+
+            <div class="field-group">
+              <label class="field-label">Node title</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput formControlName="nodeName" />
+              </mat-form-field>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="field-label">Depth level</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="currentDepthLevel" />
+                </mat-form-field>
+              </div>
+              <div class="col-6">
+                <label class="field-label">SLA (minutes)</label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Fallback admin user</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput formControlName="fallbackAdminUserId" />
+              </mat-form-field>
+            </div>
+
+            <div class="field-group mb-0">
+              <label class="field-label">Fallback admin group</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput formControlName="fallbackAdminGroupId" />
+              </mat-form-field>
+            </div>
+          </mat-card>
+
+          <mat-card class="form-section-card p-4">
+            <div class="form-section-label">Notifications</div>
+
+            <div class="notify-panel p-3 rounded-3">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="fw-semibold shg-body">Enable Alerts</span>
+                <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
+              </div>
+              <div *ngIf="createForm.get('notifyEnabled')?.value">
+                <div class="field-group">
+                  <label class="field-label">Target email</label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput type="email" formControlName="notifyEmail" />
+                  </mat-form-field>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Target mobile</label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput type="text" formControlName="notifyMobile" />
+                  </mat-form-field>
+                </div>
+                <div class="d-flex gap-4 mt-1">
+                  <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
+                  <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+
+        </div>
+      </div>
+    </form>
+
+  </div><!-- /activeProductId -->
+</div><!-- /create-scroll-area -->
+
+<!-- =========================================================
+     Action footer — always visible, outside the scroll area
+     ========================================================= -->
+<div class="create-action-footer" *ngIf="activeProductId">
+  <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
+    <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+    <span>{{ isSubmitting ? 'Creating...' : 'Register Configuration' }}</span>
+  </button>
+</div>

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProductService, ProductWorkspace } from '../../services/product.service';
 import { TenantContextService } from '../../services/tenant-context.service';
+import { Sort } from '@angular/material/sort';
 
 @Component({
   selector: 'app-product-config',
@@ -15,8 +16,23 @@ export class ProductConfigComponent implements OnInit {
   workspaces: ProductWorkspace[] = [];
   activeProductId = '';
   isSubmitting = false;
+  isLoading = false;
   successMessage = '';
   errorMessage = '';
+
+  // Table columns
+  displayedColumns = ['productId', 'productName', 'sourceSystemCode', 'status', 'createdDate', 'actions'];
+
+  // Pagination & Sorting
+  page = 1;
+  size = 10;
+  sortField = 'createdDate';
+  sortOrder: 'ASC' | 'DESC' = 'DESC';
+  totalCount = 0;
+  pageSizeOptions = [5, 10, 25];
+
+  // Create form toggle
+  showCreateForm = false;
 
   private destroyRef = inject(DestroyRef);
 
@@ -33,15 +49,24 @@ export class ProductConfigComponent implements OnInit {
       description: ['', [Validators.required, Validators.maxLength(200)]]
     });
 
-    this.loadWorkspaces();
     this.tenantContext.activeTenant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tenant => {
       this.activeProductId = tenant ? tenant.productId : '';
+      this.page = 1;
+      this.loadWorkspaces();
     });
   }
 
   loadWorkspaces(): void {
-    this.productService.getProducts().subscribe(list => {
-      this.workspaces = list;
+    this.isLoading = true;
+    this.productService.getProducts(this.activeProductId, this.page, this.size, this.sortField, this.sortOrder).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.workspaces = res.responseObject || [];
+        this.totalCount = res.totalCount || 0;
+      },
+      error: () => {
+        this.isLoading = false;
+      }
     });
   }
 
@@ -69,10 +94,14 @@ export class ProductConfigComponent implements OnInit {
         if (res.success) {
           this.successMessage = res.message;
           this.productForm.reset();
-          this.loadWorkspaces();
-          // Auto select the newly created tenant context
+          this.showCreateForm = false;
+          this.page = 1;
+          // Set tenant with the newly created productId — this triggers the subscription
+          // which updates activeProductId and auto-reloads the table with X-Product-Id header
           if (res.responseObject) {
             this.tenantContext.setTenant(res.responseObject.productId, res.responseObject.productName);
+          } else {
+            this.loadWorkspaces();
           }
         } else {
           this.errorMessage = res.message || 'Failed to create product workspace.';
@@ -84,5 +113,50 @@ export class ProductConfigComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  // Sorting
+  onSortChange(sort: Sort): void {
+    this.sortField = sort.active || 'createdDate';
+    this.sortOrder = sort.direction === 'asc' ? 'ASC' : 'DESC';
+    this.page = 1;
+    this.loadWorkspaces();
+  }
+
+  // Pagination
+  changePage(p: number): void {
+    this.page = p;
+    this.loadWorkspaces();
+  }
+
+  onSizeChange(newSize: number): void {
+    this.size = newSize;
+    this.page = 1;
+    this.loadWorkspaces();
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalCount / this.size) || 1;
+  }
+
+  get startItem(): number {
+    return this.totalCount === 0 ? 0 : (this.page - 1) * this.size + 1;
+  }
+
+  get endItem(): number {
+    return Math.min(this.page * this.size, this.totalCount);
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: number[] = [1];
+    if (this.page > 3) pages.push(-1);
+    for (let i = Math.max(2, this.page - 1); i <= Math.min(total - 1, this.page + 1); i++) {
+      pages.push(i);
+    }
+    if (this.page < total - 2) pages.push(-1);
+    pages.push(total);
+    return pages;
   }
 }

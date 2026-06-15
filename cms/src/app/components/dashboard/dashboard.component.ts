@@ -39,8 +39,8 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     // Always load product count
-    this.productService.getProducts().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(products => {
-      this.totalProducts = products.length;
+    this.productService.getProducts('').pipe(takeUntilDestroyed(this.destroyRef)).subscribe(res => {
+      this.totalProducts = res.totalCount || (res.responseObject ? res.responseObject.length : 0);
     });
 
     // Load case stats whenever active tenant changes

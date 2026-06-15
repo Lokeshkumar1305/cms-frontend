@@ -201,14 +201,14 @@ export class CaseService {
     localStorage.setItem('mock_cases', JSON.stringify(this.mockCases));
   }
 
-  // Fetch Dynamic Workspace Queue (POST http://localhost:8091/api/cms/cases/getall)
+  // Fetch Dynamic Workspace Queue (POST http://192.168.100.61:8091/api/cms/cases/getall)
   getWorkspaceQueue(productId: string, payload: CaseQueuePayload): Observable<any> {
-    const headers = new HttpHeaders({
-      'X-User-Id': 'retail_agent_01',
-      'Content-Type': 'application/json'
-    });
+    const headers = new HttpHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-User-Id', 'retail_agent_01')
+      .set('X-Product-Id', productId);
 
-    return this.http.post<any>(`${this.apiUrl}/getall`, { productId, ...payload }, { headers }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/getall`, { ...payload }, { headers }).pipe(
       catchError(err => {
         console.warn('Backend API offline, executing mock workspace queue retrieval.', err);
         
@@ -241,14 +241,14 @@ export class CaseService {
     );
   }
 
-  // Search Active Workspace Silos (POST http://localhost:8091/api/cms/cases/search)
+  // Search Active Workspace Silos (POST http://192.168.100.61:8091/api/cms/cases/search)
   searchCases(productId: string, payload: CaseSearchPayload): Observable<any> {
-    const headers = new HttpHeaders({
-      'X-User-Id': 'system_admin',
-      'Content-Type': 'application/json'
-    });
+    const headers = new HttpHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-User-Id', 'system_admin')
+      .set('X-Product-Id', productId);
 
-    return this.http.post<any>(`${this.apiUrl}/search`, { productId, ...payload }, { headers }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/search`, { ...payload }, { headers }).pipe(
       catchError(err => {
         console.warn('Backend API offline, applying mock criteria-based search filters.', err);
         
@@ -300,8 +300,11 @@ export class CaseService {
     total: number; initiated: number; inProgress: number; completed: number; failed: number;
     recentCases: CaseWorkflow[];
   }> {
-    const headers = new HttpHeaders({ 'X-User-Id': 'retail_agent_01', 'Content-Type': 'application/json' });
-    return this.http.post<any>(`${this.apiUrl}/getall`, { productId, page: 1, size: 100, sortField: 'createdDate', sortOrder: 'DESC' }, { headers }).pipe(
+    const headers = new HttpHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-User-Id', 'retail_agent_01')
+      .set('X-Product-Id', productId);
+    return this.http.post<any>(`${this.apiUrl}/getall`, { page: 1, size: 100, sortField: 'createdDate', sortOrder: 'DESC' }, { headers }).pipe(
       map(res => this.buildSummary(res.responseObject || [])),
       catchError(() => {
         const filtered = this.mockCases.filter(c => c.productId === productId);

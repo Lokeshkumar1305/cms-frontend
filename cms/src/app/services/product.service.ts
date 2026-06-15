@@ -48,13 +48,55 @@ export class ProductService {
     localStorage.setItem('mock_products', JSON.stringify(this.mockProducts));
   }
 
-  // Get all workspaces (mocked / fallback)
-  getProducts(): Observable<ProductWorkspace[]> {
-    // Note: If there is a GET endpoint we would call it, else we return our list
-    return of([...this.mockProducts]);
+  // Fetch all products (POST http://192.168.100.61:8091/api/cms/product/getall)
+  getProducts(productId: string = '', page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC'): Observable<any> {
+    let headers = new HttpHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-User-Id', 'system_admin');
+    if (productId) {
+      headers = headers.set('X-Product-Id', productId);
+    }
+
+    const payload = { page, size, sortField, sortOrder };
+
+    return this.http.post<any>(`${this.apiUrl}/getall`, payload, { headers }).pipe(
+      map(res => {
+        if (res && res.success && res.responseObject && Array.isArray(res.responseObject)) {
+          for (const product of res.responseObject) {
+            this.syncLocalProduct(product);
+          }
+        }
+        return res;
+      }),
+      catchError(err => {
+        console.warn('Backend API offline, using mock product list.', err);
+
+        // Sort mock data
+        const sorted = [...this.mockProducts].sort((a, b) => {
+          const valA = (a as any)[sortField] || '';
+          const valB = (b as any)[sortField] || '';
+          if (typeof valA === 'string' && typeof valB === 'string') {
+            return sortOrder === 'ASC' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          }
+          return 0;
+        });
+
+        // Paginate
+        const start = (page - 1) * size;
+        const pageItems = sorted.slice(start, start + size);
+
+        return of({
+          success: true,
+          message: pageItems.length > 0 ? 'Success' : 'No data found',
+          responseObject: pageItems,
+          statusCode: 200,
+          totalCount: sorted.length
+        });
+      })
+    );
   }
 
-  // Create Product Workspace (POST http://localhost:8091/api/cms/product/create)
+  // Create Product Workspace (POST http://192.168.100.61:8091/api/cms/product/create)
   createProductWorkspace(name: string, code: string, description: string): Observable<any> {
     const headers = new HttpHeaders({
       'X-User-Id': 'system_admin',

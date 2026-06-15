@@ -13,136 +13,276 @@
   <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
 </div>
 
+<!-- Top Action Bar -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <span class="fw-bold shg-body" style="color:var(--shg-ink-500); text-transform:uppercase; font-size:12px; letter-spacing:0.5px;">
+      Product Workspace Registry
+    </span>
+    <span class="shg-caption" style="color:var(--shg-ink-500)">{{ totalCount }} products</span>
+  </div>
+  <button mat-flat-button color="primary" (click)="showCreateForm = !showCreateForm" class="gap-1 filter-btn">
+    <i class="bi" [class.bi-plus-lg]="!showCreateForm" [class.bi-dash-lg]="showCreateForm"></i>
+    <span>{{ showCreateForm ? 'Close' : 'Add New Product' }}</span>
+  </button>
+</div>
+
+<!-- Main Content: Table + Side Panel -->
 <div class="row g-4">
 
-  <!-- Left: Provision Form -->
-  <div class="col-12 col-lg-5">
-    <mat-card class="p-4 h-100">
-      <h2 class="shg-title mb-3 pb-2 border-bottom">Provision Product Workspace</h2>
+  <!-- Left: Product Table -->
+  <div class="col-12" [class.col-lg-8]="showCreateForm">
+    <mat-card class="queue-table-card">
 
-      <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+      <table mat-table [dataSource]="workspaces" matSort (matSortChange)="onSortChange($event)" class="w-100">
+
+        <!-- Product ID -->
+        <ng-container matColumnDef="productId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="productId">Product ID</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="shg-mono fw-bold">{{ item.productId }}</span>
+          </td>
+        </ng-container>
 
         <!-- Product Name -->
-        <div class="field-group">
-          <label class="field-label">Product name</label>
-          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-            <input
-              matInput
-              type="text"
-              formControlName="productName"
-              placeholder="e.g. Commercial & Consumer Lending Vertical"
-            />
-            <mat-error *ngIf="productForm.get('productName')?.hasError('required') || productForm.get('productName')?.hasError('minlength')">
-              Product name is required (min 3 characters).
-            </mat-error>
-          </mat-form-field>
-        </div>
+        <ng-container matColumnDef="productName">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="productName">Product</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="fw-semibold shg-body">{{ item.productName }}</span>
+            <span *ngIf="item.description" class="shg-caption d-block text-truncate" style="max-width:240px; color:var(--shg-ink-500)">
+              {{ item.description }}
+            </span>
+          </td>
+        </ng-container>
 
         <!-- Source System Code -->
-        <div class="field-group">
-          <label class="field-label">Source system code</label>
-          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-            <input
-              matInput
-              type="text"
-              formControlName="sourceSystemCode"
-              placeholder="e.g. LENDING-CORE"
-            />
-            <mat-error *ngIf="productForm.get('sourceSystemCode')?.invalid && productForm.get('sourceSystemCode')?.touched">
-              Source code is required (alphanumeric and uppercase).
-            </mat-error>
-          </mat-form-field>
+        <ng-container matColumnDef="sourceSystemCode">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="sourceSystemCode">System Code</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="shg-caption px-2 py-1 rounded" style="background:var(--shg-canvas); color:var(--shg-ink-900); border:1px solid var(--shg-ink-200)">
+              {{ item.sourceSystemCode }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Status -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="status">Status</th>
+          <td mat-cell *matCellDef="let item">
+            <span
+              class="shg-pill"
+              [class.ok]="item.status === 'ACTIVE'"
+              [class.warn]="item.status === 'INACTIVE'"
+              [class.err]="item.status === 'ARCHIVED'"
+            >
+              {{ item.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Created Date -->
+        <ng-container matColumnDef="createdDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="createdDate">Created</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="shg-caption">{{ item.createdDate | date:'medium' }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef style="width:120px">Actions</th>
+          <td mat-cell *matCellDef="let item">
+            <button
+              *ngIf="item.productId !== activeProductId"
+              mat-stroked-button
+              color="primary"
+              (click)="selectTenant(item)"
+              class="action-btn gap-1"
+            >
+              <i class="bi bi-box-arrow-in-right"></i>
+              <span>Select</span>
+            </button>
+            <span *ngIf="item.productId === activeProductId" class="d-flex align-items-center gap-1 fw-bold" style="color:var(--shg-primary)">
+              <i class="bi bi-check-circle-fill"></i>
+              <span class="shg-caption fw-bold">Active</span>
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns;"
+          [class.active-row]="row.productId === activeProductId"
+        ></tr>
+
+        <!-- No data -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell text-center py-5" [attr.colspan]="displayedColumns.length">
+            <span *ngIf="isLoading">
+              <mat-spinner diameter="32" class="mx-auto mb-2"></mat-spinner>
+              <span class="shg-caption d-block">Loading product workspaces...</span>
+            </span>
+            <span *ngIf="!isLoading">
+              <i class="bi bi-hdd-network fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+              <span class="shg-caption">No product partitions found.</span>
+            </span>
+          </td>
+        </tr>
+
+      </table>
+
+      <!-- Pagination Bar -->
+      <div class="shg-pagination d-flex align-items-center justify-content-between flex-wrap gap-2 px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+          <span class="shg-caption">
+            Showing
+            <strong>{{ startItem }}–{{ endItem }}</strong>
+            of
+            <strong>{{ totalCount }}</strong>
+          </span>
+          <select
+            class="shg-page-size-select"
+            [value]="size"
+            (change)="onSizeChange(+$any($event.target).value)"
+          >
+            <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
+          </select>
         </div>
 
-        <!-- Description -->
-        <div class="field-group">
-          <label class="field-label">Description</label>
+        <div class="d-flex align-items-center gap-1">
+          <button
+            class="shg-page-btn"
+            [disabled]="page <= 1"
+            (click)="changePage(page - 1)"
+          >Previous</button>
 
-          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-            <textarea
-              matInput
-              formControlName="description"
-              placeholder="Provide a partition description..."
-              rows="4"
-              style="resize:none"
-            ></textarea>
-            <mat-error *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched">
-              Description is required (max 200 characters).
-            </mat-error>
-          </mat-form-field>
+          <ng-container *ngFor="let p of pageNumbers">
+            <button
+              *ngIf="p !== -1"
+              class="shg-page-btn"
+              [class.active]="p === page"
+              (click)="changePage(p)"
+            >{{ p }}</button>
+            <span *ngIf="p === -1" class="shg-caption px-1">…</span>
+          </ng-container>
+
+          <button
+            class="shg-page-btn"
+            [disabled]="page >= totalPages"
+            (click)="changePage(page + 1)"
+          >Next</button>
         </div>
+      </div>
 
-        <!-- Submit -->
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          class="w-100 provision-btn mt-2"
-          [disabled]="isSubmitting"
-        >
-          <mat-spinner diameter="18" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
-          <span>{{ isSubmitting ? 'Provisioning Partition...' : 'Create Product Workspace' }}</span>
-        </button>
-
-      </form>
     </mat-card>
   </div>
 
-  <!-- Right: Existing Partitions -->
-  <div class="col-12 col-lg-7">
-    <mat-card class="p-4 h-100 d-flex flex-column">
-      <h2 class="shg-title mb-3 pb-2 border-bottom">Active Product Partitions (Tenants)</h2>
+  <!-- Right: Create Product Side Panel -->
+  <div class="col-12 col-lg-4 animate-slide" *ngIf="showCreateForm">
+    <mat-card class="side-panel p-0 d-flex flex-column">
 
-      <div class="flex-grow-1 overflow-auto" style="max-height: 500px;">
-
-        <div *ngIf="workspaces.length === 0" class="text-center py-5">
-          <i class="bi bi-hdd-network fs-1 d-block mb-2" style="color:var(--shg-ink-200)"></i>
-          <span class="shg-caption">No product partitions provisioned yet.</span>
+      <!-- Panel Header -->
+      <div class="side-panel-header d-flex align-items-center justify-content-between px-4 py-3">
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle-fill" style="color:var(--shg-primary); font-size:18px"></i>
+            <h3 class="shg-title m-0">Add new product</h3>
+          </div>
+          <p class="shg-caption m-0 mt-1" style="color:var(--shg-ink-500)">Provision a new workspace partition</p>
         </div>
-
-        <div class="d-flex flex-column gap-3">
-          <mat-card
-            *ngFor="let ws of workspaces"
-            class="partition-card p-3 position-relative"
-            [class.active-partition]="ws.productId === activeProductId"
-          >
-            <!-- Status Badges -->
-            <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
-              <span class="shg-pill ok" *ngIf="ws.status === 'ACTIVE'">{{ ws.status }}</span>
-              <span class="shg-pill info" *ngIf="ws.productId === activeProductId">ACTIVE CONTEXT</span>
-            </div>
-
-            <!-- Details -->
-            <h4 class="shg-title m-0 pe-5">{{ ws.productName }}</h4>
-            <div class="mt-2 d-flex flex-wrap gap-3">
-              <span class="shg-caption">ID: <code class="shg-mono" style="color:var(--shg-ink-900)">{{ ws.productId }}</code></span>
-              <span class="shg-caption">System Code: <strong style="color:var(--shg-ink-900)">{{ ws.sourceSystemCode }}</strong></span>
-            </div>
-            <p class="shg-body mt-2 mb-3 text-truncate-2" style="color:var(--shg-ink-500)">{{ ws.description }}</p>
-
-            <div class="d-flex align-items-center justify-content-between border-top pt-2">
-              <span class="shg-caption">Created: {{ ws.createdDate | date:'short' }}</span>
-
-              <button
-                *ngIf="ws.productId !== activeProductId"
-                mat-stroked-button
-                color="primary"
-                (click)="selectTenant(ws)"
-                class="gap-1"
-              >
-                <i class="bi bi-box-arrow-in-right"></i>
-                <span>Select Tenant</span>
-              </button>
-              <span *ngIf="ws.productId === activeProductId" class="d-flex align-items-center gap-1 fw-bold" style="color:var(--shg-primary)">
-                <i class="bi bi-check-circle-fill"></i>
-                <span class="shg-caption fw-bold">Selected Tenant</span>
-              </span>
-            </div>
-
-          </mat-card>
-        </div>
-
+        <button mat-icon-button (click)="showCreateForm = false" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Panel Body -->
+      <div class="side-panel-body flex-grow-1 px-4 py-3 overflow-auto">
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+
+          <!-- Section: Basic Info -->
+          <div class="form-section-label">Basic Info</div>
+
+          <!-- Product Name -->
+          <div class="field-group">
+            <label class="field-label">Product name</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input
+                matInput
+                type="text"
+                formControlName="productName"
+                placeholder="e.g. Commercial & Consumer Lending"
+              />
+              <mat-error *ngIf="productForm.get('productName')?.hasError('required') || productForm.get('productName')?.hasError('minlength')">
+                Product name is required (min 3 characters).
+              </mat-error>
+            </mat-form-field>
+            <span class="shg-caption field-hint">2–100 characters</span>
+          </div>
+
+          <!-- Description -->
+          <div class="field-group">
+            <label class="field-label">Description</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <textarea
+                matInput
+                formControlName="description"
+                placeholder="Provide a partition description..."
+                rows="3"
+                style="resize:none"
+              ></textarea>
+              <mat-error *ngIf="productForm.get('description')?.invalid && productForm.get('description')?.touched">
+                Description is required (max 200 characters).
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <mat-divider class="my-3"></mat-divider>
+
+          <!-- Section: Configuration -->
+          <div class="form-section-label">Configuration</div>
+
+          <!-- Source System Code -->
+          <div class="field-group">
+            <label class="field-label">Source system code</label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input
+                matInput
+                type="text"
+                formControlName="sourceSystemCode"
+                placeholder="e.g. LENDING-CORE"
+              />
+              <mat-error *ngIf="productForm.get('sourceSystemCode')?.invalid && productForm.get('sourceSystemCode')?.touched">
+                Required (uppercase alphanumeric, dashes, underscores).
+              </mat-error>
+            </mat-form-field>
+            <span class="shg-caption field-hint">Alphanumeric, uppercase only (A-Z, 0-9, -, _)</span>
+          </div>
+
+        </form>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Panel Footer -->
+      <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
+        <button mat-stroked-button (click)="showCreateForm = false; productForm.reset()">
+          Cancel
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="onSubmit()"
+          [disabled]="isSubmitting"
+          class="save-btn"
+        >
+          <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+          <span>{{ isSubmitting ? 'Creating...' : 'Save product' }}</span>
+        </button>
+      </div>
+
     </mat-card>
   </div>
 

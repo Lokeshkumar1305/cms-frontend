@@ -39,6 +39,7 @@ import { LoginComponent } from './components/login/login.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { ProductConfigComponent } from './components/product-config/product-config.component';
 import { CaseBuilderComponent } from './components/case-builder/case-builder.component';
+import { CaseCreateComponent } from './components/case-create/case-create.component';
 import { CaseWorkspaceComponent } from './components/case-workspace/case-workspace.component';
 import { routes } from './app.routes';
 
@@ -51,6 +52,7 @@ import { routes } from './app.routes';
     DashboardComponent,
     ProductConfigComponent,
     CaseBuilderComponent,
+    CaseCreateComponent,
     CaseWorkspaceComponent
   ],
   imports: [

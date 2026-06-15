@@ -184,7 +184,13 @@ export class CaseWorkspaceComponent implements OnInit {
     return pages;
   }
 
+  openIngestForm(): void {
+    this.selectedCase = null;
+    this.showIngestForm = !this.showIngestForm;
+  }
+
   viewDetails(item: CaseWorkflow): void {
+    this.showIngestForm = false;
     this.selectedCase = item;
   }
 

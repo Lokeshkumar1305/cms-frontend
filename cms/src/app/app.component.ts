@@ -29,7 +29,8 @@ export class AppComponent implements OnInit {
     this.isLoggedIn$.subscribe(loggedIn => {
       if (loggedIn) {
         // If logged in and on login route, go to dashboard
-        if (this.router.url === '/login' || this.router.url === '/') {
+        const currentPath = window.location.pathname;
+        if (currentPath === '/login' || currentPath === '/' || currentPath === '') {
           this.router.navigate(['/dashboard']);
         }
       } else {

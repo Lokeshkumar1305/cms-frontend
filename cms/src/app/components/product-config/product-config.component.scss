@@ -1,44 +1,8 @@
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+// ==========================================
+// Product Config — Component Styles
+// ==========================================
 
-.partition-card {
-  border: 1px solid var(--shg-ink-200) !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    box-shadow: 0 2px 8px rgba(11,18,32,0.06) !important;
-  }
-
-  &.active-partition {
-    border-color: var(--shg-primary) !important;
-    background-color: rgba(15, 76, 129, 0.02) !important;
-  }
-}
-
-.provision-btn {
-  height: 44px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.spinner-inline {
-  display: inline-block;
-
-  ::ng-deep circle {
-    stroke: #ffffff !important;
-  }
-}
-
+// Alert Banners
 .shg-alert-banner {
   &.ok {
     background-color: rgba(22, 163, 74, 0.08);
@@ -49,5 +13,190 @@
     background-color: rgba(220, 38, 38, 0.08);
     color: var(--shg-error);
     border: 1px solid rgba(220, 38, 38, 0.2);
+  }
+}
+
+// ==========================================
+// Data Table
+// ==========================================
+.queue-table-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 12px !important;
+
+  ::ng-deep .mat-mdc-table {
+    border-radius: 0;
+  }
+}
+
+.active-row {
+  background-color: rgba(15, 76, 129, 0.04) !important;
+}
+
+.action-btn {
+  font-size: 12px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  min-width: unset !important;
+
+  ::ng-deep .mdc-button__label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+}
+
+.filter-btn {
+  height: 36px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 4px;
+}
+
+// ==========================================
+// Side Panel (Create Form)
+// ==========================================
+.side-panel {
+  border-radius: 12px !important;
+  border: 1px solid var(--shg-ink-200) !important;
+  box-shadow: 0 4px 24px rgba(11, 18, 32, 0.08) !important;
+  max-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+}
+
+.side-panel-header {
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+}
+
+.side-panel-body {
+  overflow-y: auto;
+  flex: 1;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--shg-ink-200);
+    border-radius: 4px;
+  }
+}
+
+.side-panel-footer {
+  background: var(--shg-canvas, #f8f9fa);
+  border-radius: 0 0 12px 12px;
+}
+
+.form-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--shg-ink-500);
+  margin-bottom: 12px;
+}
+
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--shg-ink-500);
+}
+
+.save-btn {
+  height: 38px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.spinner-inline {
+  display: inline-block;
+
+  ::ng-deep circle {
+    stroke: #ffffff !important;
+  }
+}
+
+// ==========================================
+// Animation
+// ==========================================
+.animate-slide {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+// ==========================================
+// Pagination
+// ==========================================
+.shg-pagination {
+  border-top: 1px solid var(--shg-ink-200);
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+}
+
+.shg-page-size-select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--shg-ink-200);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: var(--shg-ink-900);
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+  appearance: auto;
+
+  &:focus {
+    border-color: var(--shg-primary);
+    box-shadow: 0 0 0 2px rgba(15, 76, 129, 0.12);
+  }
+}
+
+.shg-page-btn {
+  height: 32px;
+  min-width: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--shg-ink-200);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  background: #fff;
+  color: var(--shg-ink-900);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+
+  &:hover:not(:disabled):not(.active) {
+    background: var(--shg-canvas);
+    border-color: var(--shg-ink-500);
+  }
+
+  &.active {
+    background: var(--shg-primary);
+    border-color: var(--shg-primary);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
   }
 }
