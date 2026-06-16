@@ -58,8 +58,8 @@ export class CaseCreateComponent implements OnInit {
     this.createForm = this.fb.group({
       configPath:              ['LOAN.RETAIL.EXPRESS',              [Validators.required]],
       nodeName:                ['Retail Express Micro Pathway Node', [Validators.required]],
-      currentDepthLevel:       [3,                                  [Validators.required, Validators.min(1)]],
-      globalSlaTimeoutMinutes: [1440,                               [Validators.required, Validators.min(1)]],
+      currentDepthLevel:       [null, [Validators.required, Validators.min(1)]],
+      globalSlaTimeoutMinutes: [null, [Validators.required, Validators.min(1)]],
       fallbackAdminUserId:     ['retail_operations_manager',        [Validators.required]],
       fallbackAdminGroupId:    ['RETAIL_ADMIN_GP',                  [Validators.required]],
       notifyEnabled:           [true],
