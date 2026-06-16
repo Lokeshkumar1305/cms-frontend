@@ -2,7 +2,7 @@ import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ConfigurationService, NotificationSettings } from '../../services/configuration.service';
+import { ConfigurationService, CaseConfiguration, NotificationSettings } from '../../services/configuration.service';
 import { TenantContextService } from '../../services/tenant-context.service';
 
 @Component({
@@ -16,21 +16,64 @@ export class CaseCreateComponent implements OnInit {
   activeProductName = '';
   isSubmitting = false;
   errorMessage = '';
+  approvalTiersError = '';
+
+  editMode = false;
+  editConfigId = '';
 
   createForm!: FormGroup;
-  nodes: string[] = ['LOAN', 'RETAIL', 'EXPRESS'];
+  nodes: string[] = [];
   newNodeName = '';
 
-  nodeWorkflows: { nodeName: string; bpmnFile: string }[] = [
-    { nodeName: 'LOAN',    bpmnFile: 'universal-case-flow' },
-    { nodeName: 'RETAIL',  bpmnFile: '' },
-    { nodeName: 'EXPRESS', bpmnFile: 'retail-express-flow' }
-  ];
-
+  nodeWorkflows: { nodeName: string; bpmnFile: string }[] = [];
   substageEntries: { name: string; bpmnFile: string }[] = [];
 
   mainUploadStates: boolean[] = [];
   subUploadStates: boolean[] = [];
+  mainUploadedStates: boolean[] = [];
+  subUploadedStates: boolean[] = [];
+
+  approvalTiers: {
+    tierName: string;
+    authorizedGroups: string[];
+    authorizedUsers: string[];
+    strictBinding: boolean;
+    newGroup: string;
+    newUser: string;
+  }[] = [];
+
+  addApprovalTier(): void {
+    this.approvalTiers.push({ tierName: '', authorizedGroups: [], authorizedUsers: [], strictBinding: true, newGroup: '', newUser: '' });
+    this.approvalTiersError = '';
+  }
+
+  removeApprovalTier(i: number): void {
+    this.approvalTiers.splice(i, 1);
+  }
+
+  addGroupToTier(i: number): void {
+    const val = this.approvalTiers[i].newGroup.trim().toUpperCase();
+    if (val && !this.approvalTiers[i].authorizedGroups.includes(val)) {
+      this.approvalTiers[i].authorizedGroups.push(val);
+    }
+    this.approvalTiers[i].newGroup = '';
+  }
+
+  removeGroupFromTier(i: number, j: number): void {
+    this.approvalTiers[i].authorizedGroups.splice(j, 1);
+  }
+
+  addUserToTier(i: number): void {
+    const val = this.approvalTiers[i].newUser.trim();
+    if (val && !this.approvalTiers[i].authorizedUsers.includes(val)) {
+      this.approvalTiers[i].authorizedUsers.push(val);
+    }
+    this.approvalTiers[i].newUser = '';
+  }
+
+  removeUserFromTier(i: number, j: number): void {
+    this.approvalTiers[i].authorizedUsers.splice(j, 1);
+  }
 
   private destroyRef = inject(DestroyRef);
 
@@ -42,7 +85,16 @@ export class CaseCreateComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.initForm();
+    const navState = history.state as { config?: CaseConfiguration; mode?: string };
+    if (navState?.mode === 'edit' && navState?.config) {
+      this.editMode = true;
+      this.editConfigId = navState.config.id;
+      this.initForm();
+      this.prefillForm(navState.config);
+    } else {
+      this.initForm();
+    }
+
     this.tenantContext.activeTenant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tenant => {
       if (tenant) {
         this.activeProductId = tenant.productId;
@@ -56,19 +108,52 @@ export class CaseCreateComponent implements OnInit {
 
   initForm(): void {
     this.createForm = this.fb.group({
-      configPath:              ['LOAN.RETAIL.EXPRESS',              [Validators.required]],
-      nodeName:                ['Retail Express Micro Pathway Node', [Validators.required]],
+      configPath:              ['', [Validators.required]],
+      nodeName:                ['', [Validators.required]],
       currentDepthLevel:       [null, [Validators.required, Validators.min(1)]],
       globalSlaTimeoutMinutes: [null, [Validators.required, Validators.min(1)]],
-      fallbackAdminUserId:     ['retail_operations_manager',        [Validators.required]],
-      fallbackAdminGroupId:    ['RETAIL_ADMIN_GP',                  [Validators.required]],
-      notifyEnabled:           [true],
-      notifyEmail:             ['', [Validators.email]],
-      notifyMobile:            [''],
+      fallbackAdminUserId:     ['', [Validators.required]],
+      fallbackAdminGroupId:    ['', [Validators.required]],
+      notifyEnabled:           [false],
+      notifyEmail:             ['', [Validators.email, Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)]],
+      notifyMobile:            ['', [Validators.pattern(/^[6-9]\d{9}$/), Validators.maxLength(10)]],
       notifySMSChannel:        [false],
       notifyEmailChannel:      [false],
       notifyWhatsAppChannel:   [false]
     });
+  }
+
+  private prefillForm(config: CaseConfiguration): void {
+    this.nodes = config.configPath ? config.configPath.split('.') : [];
+    this.nodeWorkflows = this.nodes.map(node => ({
+      nodeName: node,
+      bpmnFile: config.workflowKeys?.[node] || ''
+    }));
+
+    const notify = config.notificationSettings;
+    this.createForm.patchValue({
+      configPath:              config.configPath,
+      nodeName:                config.nodeName,
+      currentDepthLevel:       config.currentDepthLevel,
+      globalSlaTimeoutMinutes: config.globalSlaTimeoutMinutes,
+      fallbackAdminUserId:     config.fallbackAdminUserId,
+      fallbackAdminGroupId:    config.fallbackAdminGroupId,
+      notifyEnabled:           notify?.enabled ?? false,
+      notifyEmail:             notify?.targetEmailId ?? '',
+      notifyMobile:            notify?.targetMobileNumber ?? '',
+      notifySMSChannel:        notify?.channels?.includes('SMS') ?? false,
+      notifyEmailChannel:      notify?.channels?.includes('EMAIL') ?? false,
+      notifyWhatsAppChannel:   notify?.channels?.includes('WHATSAPP') ?? false
+    });
+
+    this.approvalTiers = (config.approvalSettings?.tiers || []).map(t => ({
+      tierName:         t.tierName,
+      authorizedGroups: [...(t.authorizedGroups || [])],
+      authorizedUsers:  [...(t.authorizedUsers || [])],
+      strictBinding:    t.strictBinding,
+      newGroup:         '',
+      newUser:          ''
+    }));
   }
 
   addNode(): void {
@@ -97,10 +182,7 @@ export class CaseCreateComponent implements OnInit {
       if (existing) {
         updated.push(existing);
       } else {
-        let defaultBpmn = '';
-        if (node === 'LOAN')    defaultBpmn = 'universal-case-flow';
-        if (node === 'EXPRESS') defaultBpmn = 'retail-express-flow';
-        updated.push({ nodeName: node, bpmnFile: defaultBpmn });
+        updated.push({ nodeName: node, bpmnFile: '' });
       }
     }
     this.nodeWorkflows = updated;
@@ -121,16 +203,27 @@ export class CaseCreateComponent implements OnInit {
     input.value = '';
 
     this.mainUploadStates[wIdx] = true;
+    this.mainUploadedStates[wIdx] = false;
     this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
       next: (res) => {
         this.mainUploadStates[wIdx] = false;
-        this.nodeWorkflows[wIdx].bpmnFile = res?.responseObject?.processKey || file.name.replace(/\.(bpmn|xml)$/i, '');
+        if (res?.status === 'SUCCESS' && res?.resourceName) {
+          this.nodeWorkflows[wIdx].bpmnFile = res.resourceName.replace(/\.(bpmn|xml)$/i, '');
+          this.mainUploadedStates[wIdx] = true;
+        } else {
+          this.nodeWorkflows[wIdx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+        }
       },
       error: () => {
         this.mainUploadStates[wIdx] = false;
         this.nodeWorkflows[wIdx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
       }
     });
+  }
+
+  clearMainUpload(wIdx: number): void {
+    this.nodeWorkflows[wIdx].bpmnFile = '';
+    this.mainUploadedStates[wIdx] = false;
   }
 
   onSubstageBpmnUpload(event: Event, idx: number): void {
@@ -140,10 +233,16 @@ export class CaseCreateComponent implements OnInit {
     input.value = '';
 
     this.subUploadStates[idx] = true;
+    this.subUploadedStates[idx] = false;
     this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
       next: (res) => {
         this.subUploadStates[idx] = false;
-        this.substageEntries[idx].bpmnFile = res?.responseObject?.processKey || file.name.replace(/\.(bpmn|xml)$/i, '');
+        if (res?.status === 'SUCCESS' && res?.resourceName) {
+          this.substageEntries[idx].bpmnFile = res.resourceName.replace(/\.(bpmn|xml)$/i, '');
+          this.subUploadedStates[idx] = true;
+        } else {
+          this.substageEntries[idx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+        }
       },
       error: () => {
         this.subUploadStates[idx] = false;
@@ -152,11 +251,29 @@ export class CaseCreateComponent implements OnInit {
     });
   }
 
+  clearSubUpload(idx: number): void {
+    this.substageEntries[idx].bpmnFile = '';
+    this.subUploadedStates[idx] = false;
+  }
+
   onSubmit(): void {
     this.errorMessage = '';
+    this.approvalTiersError = '';
+
     if (this.createForm.invalid) {
       this.createForm.markAllAsTouched();
       return;
+    }
+
+    if (this.approvalTiers.length === 0) {
+      this.approvalTiersError = 'At least one approval tier is required.';
+      return;
+    }
+
+    // Flush any pending group/user inputs that weren't explicitly added
+    for (let i = 0; i < this.approvalTiers.length; i++) {
+      if (this.approvalTiers[i].newGroup.trim()) this.addGroupToTier(i);
+      if (this.approvalTiers[i].newUser.trim())  this.addUserToTier(i);
     }
 
     this.isSubmitting = true;
@@ -187,28 +304,34 @@ export class CaseCreateComponent implements OnInit {
     };
 
     const payload = {
-      configPath:              formVal.configPath,
+      configPath:              this.nodes.join('.'),
       nodeName:                formVal.nodeName,
-      parentConfigurationId:   null,
       currentDepthLevel:       formVal.currentDepthLevel,
       globalSlaTimeoutMinutes: formVal.globalSlaTimeoutMinutes,
       fallbackAdminUserId:     formVal.fallbackAdminUserId,
       fallbackAdminGroupId:    formVal.fallbackAdminGroupId,
       workflowKeys,
+      notificationSettings,
       approvalSettings: {
-        totalRequiredLevels: 2,
-        tiers: [
-          { level: 1, tierName: 'Automated Score Validation Check', authorizedGroups: ['EXPRESS_MAKER_GP'],    strictBinding: true },
-          { level: 2, tierName: 'Manager Final Audit Confirmation',  authorizedGroups: ['EXPRESS_CHECKER_GP'], strictBinding: true }
-        ]
-      },
-      notificationSettings
+        totalRequiredLevels: this.approvalTiers.length,
+        tiers: this.approvalTiers.map((t, idx) => ({
+          level: idx + 1,
+          tierName: t.tierName,
+          authorizedGroups: t.authorizedGroups,
+          authorizedUsers: t.authorizedUsers,
+          strictBinding: t.strictBinding
+        }))
+      }
     };
 
-    this.configService.createCaseConfiguration(this.activeProductId, payload).subscribe({
+    const request$ = this.editMode
+      ? this.configService.updateCaseConfiguration(this.editConfigId, payload, this.activeProductId)
+      : this.configService.createCaseConfiguration(this.activeProductId, payload);
+
+    request$.subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        if (res.success) {
+        if (res.success || this.editMode) {
           this.router.navigate(['/case-config']);
         } else {
           this.errorMessage = res.message || 'Failed to create configuration.';
@@ -216,7 +339,7 @@ export class CaseCreateComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = 'An error occurred during workflow registration.';
+        this.errorMessage = this.editMode ? 'An error occurred while updating.' : 'An error occurred during workflow registration.';
         console.error(err);
       }
     });

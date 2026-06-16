@@ -14,7 +14,7 @@ export class CaseWorkspaceComponent implements OnInit {
   activeProductId = '';
   activeProductName = '';
 
-  displayedColumns = ['caseId', 'configPath', 'applicant', 'capital', 'score', 'status', 'actions'];
+  displayedColumns = ['caseId', 'configPath', 'currentLevel', 'status', 'actions'];
 
   // Data Queue
   casesQueue: CaseWorkflow[] = [];
@@ -29,18 +29,21 @@ export class CaseWorkspaceComponent implements OnInit {
   // Search parameters
   searchStatus = '';
   searchPath = '';
-  searchApplicant = '';
 
   // Selected Detail
   selectedCase: CaseWorkflow | null = null;
   isLoading = false;
 
-  // Ingestion Mock Form fields
-  ingestApplicant = '';
-  ingestCapital = 50000;
-  ingestScore = 720;
-  ingestConfigPath = 'LOAN.RETAIL.EXPRESS';
+  // Ingestion Form fields
   showIngestForm = false;
+  isIngesting = false;
+  ingestError = '';
+  ingestConfigPath = '';
+  ingestSubstage = '';
+  ingestPayloadRows: { key: string; value: string }[] = [];
+
+  addPayloadRow(): void { this.ingestPayloadRows.push({ key: '', value: '' }); }
+  removePayloadRow(i: number): void { this.ingestPayloadRows.splice(i, 1); }
 
   private destroyRef = inject(DestroyRef);
 
@@ -70,7 +73,6 @@ export class CaseWorkspaceComponent implements OnInit {
     this.page = 1;
     this.searchStatus = '';
     this.searchPath = '';
-    this.searchApplicant = '';
   }
 
   loadQueue(): void {
@@ -78,7 +80,7 @@ export class CaseWorkspaceComponent implements OnInit {
     this.isLoading = true;
 
     // Check if search filters are active
-    const hasSearchFilters = this.searchStatus || this.searchPath || this.searchApplicant;
+    const hasSearchFilters = this.searchStatus || this.searchPath;
 
     if (hasSearchFilters) {
       const criteriaList: CaseSearchCriteria[] = [];
@@ -87,9 +89,6 @@ export class CaseWorkspaceComponent implements OnInit {
       }
       if (this.searchPath) {
         criteriaList.push({ field: 'configPath', operator: 'LIKE', value: this.searchPath });
-      }
-      if (this.searchApplicant) {
-        criteriaList.push({ field: 'applicantName', operator: 'LIKE', value: this.searchApplicant });
       }
 
       const searchPayload = {
@@ -195,19 +194,40 @@ export class CaseWorkspaceComponent implements OnInit {
   }
 
   triggerIngest(): void {
-    if (!this.activeProductId || !this.ingestApplicant.trim()) return;
-    
-    this.caseService.addNewMockCase(
-      this.activeProductId,
-      this.ingestConfigPath,
-      this.ingestApplicant,
-      this.ingestCapital,
-      this.ingestScore
-    );
+    if (!this.activeProductId || !this.ingestConfigPath.trim()) return;
 
-    this.ingestApplicant = '';
-    this.showIngestForm = false;
-    this.loadQueue();
+    const transactionPayload: { [key: string]: any } = {};
+    for (const row of this.ingestPayloadRows) {
+      if (row.key.trim()) transactionPayload[row.key.trim()] = row.value;
+    }
+
+    this.isIngesting = true;
+    this.ingestError = '';
+
+    this.caseService.createCase(
+      this.activeProductId,
+      'system_admin',
+      this.ingestConfigPath.trim(),
+      this.ingestSubstage,
+      Object.keys(transactionPayload).length > 0 ? transactionPayload : undefined
+    ).subscribe({
+      next: (res) => {
+        this.isIngesting = false;
+        if (res.success !== false) {
+          this.ingestConfigPath = '';
+          this.ingestSubstage = '';
+          this.ingestPayloadRows = [];
+          this.showIngestForm = false;
+          this.loadQueue();
+        } else {
+          this.ingestError = res.message || 'Failed to create case.';
+        }
+      },
+      error: () => {
+        this.isIngesting = false;
+        this.ingestError = 'An error occurred while creating the case.';
+      }
+    });
   }
 
   onSortChange(sort: Sort): void {

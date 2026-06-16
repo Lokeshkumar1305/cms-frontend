@@ -30,7 +30,7 @@
       <span class="shg-mono px-3 py-1 rounded" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
       <button mat-stroked-button color="primary" (click)="openIngestForm()" class="gap-1">
         <i class="bi" [class.bi-plus-lg]="!showIngestForm" [class.bi-dash-lg]="showIngestForm"></i>
-        <span>Mock Ingestion Tool</span>
+        <span>Add Case</span>
       </button>
     </div>
   </div>
@@ -77,14 +77,7 @@
         </mat-form-field>
       </div>
 
-      <!-- Applicant Filter -->
-      <div class="col-12 col-md-4">
-        <label class="field-label">Filter by applicant</label>
-        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-          <i class="bi bi-person" matPrefix></i>
-          <input matInput [(ngModel)]="searchApplicant" placeholder="Applicant name..." />
-        </mat-form-field>
-      </div>
+
     </div>
   </mat-card>
 
@@ -117,34 +110,11 @@
             </td>
           </ng-container>
 
-          <!-- Applicant -->
-          <ng-container matColumnDef="applicant">
-            <th mat-header-cell *matHeaderCellDef>Applicant</th>
+          <!-- Current Level -->
+          <ng-container matColumnDef="currentLevel">
+            <th mat-header-cell *matHeaderCellDef>Level</th>
             <td mat-cell *matCellDef="let item">
-              <span class="fw-semibold shg-body">{{ item.externalMetadata.applicantName }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Capital -->
-          <ng-container matColumnDef="capital">
-            <th mat-header-cell *matHeaderCellDef>Capital</th>
-            <td mat-cell *matCellDef="let item">
-              <span class="fw-bold">{{ item.externalMetadata.requestedCapital | currency:'INR':'symbol':'1.0-0' }}</span>
-            </td>
-          </ng-container>
-
-          <!-- Credit Score -->
-          <ng-container matColumnDef="score">
-            <th mat-header-cell *matHeaderCellDef>Score</th>
-            <td mat-cell *matCellDef="let item">
-              <span
-                class="shg-pill"
-                [class.ok]="item.externalMetadata.creditScore >= 750"
-                [class.warn]="item.externalMetadata.creditScore < 750 && item.externalMetadata.creditScore >= 650"
-                [class.err]="item.externalMetadata.creditScore < 650"
-              >
-                {{ item.externalMetadata.creditScore }}
-              </span>
+              <span class="shg-pill gray">{{ item.currentLevel }}</span>
             </td>
           </ng-container>
 
@@ -269,39 +239,53 @@
         <!-- Panel Body -->
         <div class="side-panel-body flex-grow-1 px-4 py-3 overflow-auto">
 
-          <div class="form-section-label">Applicant Info</div>
+          <!-- Error -->
+          <div *ngIf="ingestError" class="d-flex align-items-center gap-2 p-2 rounded mb-3"
+            style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ ingestError }}</span>
+          </div>
 
+          <!-- Config Path -->
           <div class="field-group">
-            <label class="field-label">Applicant name</label>
+            <label class="field-label">Config path <span style="color:#dc2626">*</span></label>
             <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput [(ngModel)]="ingestApplicant" placeholder="e.g. Ramana Yadavalli" />
+              <input matInput [(ngModel)]="ingestConfigPath" placeholder="e.g. LOAN.RETAIL.EXPRESS" />
             </mat-form-field>
           </div>
 
+          <!-- Substage (optional) -->
           <div class="field-group">
-            <label class="field-label">Capital requested</label>
+            <label class="field-label">Substage <span class="optional-tag">optional</span></label>
             <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput type="number" [(ngModel)]="ingestCapital" />
-            </mat-form-field>
-          </div>
-
-          <div class="field-group">
-            <label class="field-label">Credit score</label>
-            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput type="number" [(ngModel)]="ingestScore" />
+              <input matInput [(ngModel)]="ingestSubstage" placeholder="e.g. EXPRESS" />
             </mat-form-field>
           </div>
 
           <mat-divider class="my-3"></mat-divider>
 
-          <div class="form-section-label">Configuration</div>
+          <!-- Transaction Payload (optional) -->
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="form-section-label mb-0">Transaction Payload <span class="optional-tag">optional</span></span>
+            <button type="button" mat-stroked-button class="add-row-btn" (click)="addPayloadRow()">
+              + Add Field
+            </button>
+          </div>
 
-          <div class="field-group">
-            <label class="field-label">Config pathway</label>
-            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput [(ngModel)]="ingestConfigPath" />
-            </mat-form-field>
-            <span class="field-hint">e.g. LOAN.RETAIL.EXPRESS</span>
+          <div *ngIf="ingestPayloadRows.length === 0" class="text-center py-2 mb-2"
+            style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
+            No payload fields added
+          </div>
+
+          <div *ngFor="let row of ingestPayloadRows; let i = index"
+            class="d-flex align-items-center gap-2 mb-2">
+            <input type="text" class="form-control form-control-sm" placeholder="key"
+              [(ngModel)]="row.key" style="flex:1" />
+            <input type="text" class="form-control form-control-sm" placeholder="value"
+              [(ngModel)]="row.value" style="flex:1.5" />
+            <button type="button" class="remove-row-btn" (click)="removePayloadRow(i)">
+              <i class="bi bi-x"></i>
+            </button>
           </div>
 
         </div>
@@ -311,8 +295,10 @@
         <!-- Panel Footer -->
         <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
           <button mat-stroked-button (click)="showIngestForm = false">Cancel</button>
-          <button mat-flat-button color="primary" (click)="triggerIngest()" [disabled]="!ingestApplicant.trim()" class="save-btn">
-            Ingest Case
+          <button mat-flat-button color="primary" (click)="triggerIngest()"
+            [disabled]="!ingestConfigPath.trim() || isIngesting" class="save-btn">
+            <mat-spinner diameter="14" *ngIf="isIngesting" class="me-1"></mat-spinner>
+            <span>{{ isIngesting ? 'Creating...' : 'Create Case' }}</span>
           </button>
         </div>
 
@@ -345,49 +331,6 @@
             <span class="shg-caption d-block" style="text-transform:uppercase">Pending Actor Groups</span>
             <code style="color:var(--shg-primary); font-weight:600">{{ selectedCase.pendingGroups.join(', ') }}</code>
           </div>
-        </div>
-
-        <mat-divider class="my-3"></mat-divider>
-
-        <h3 class="shg-title mb-2" style="font-size:14px">Applicant Metadata</h3>
-        <div class="row g-2 p-2 rounded mb-3" style="background:var(--shg-canvas)">
-          <div class="col-6">
-            <span class="shg-caption d-block">Applicant</span>
-            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.applicantName }}</strong>
-          </div>
-          <div class="col-6">
-            <span class="shg-caption d-block">Capital</span>
-            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.requestedCapital | currency:'INR':'symbol':'1.0-0' }}</strong>
-          </div>
-          <div class="col-6">
-            <span class="shg-caption d-block">Credit Score</span>
-            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.creditScore }}</strong>
-          </div>
-          <div class="col-6">
-            <span class="shg-caption d-block">Tenor Duration</span>
-            <strong class="shg-body" style="font-size:13px">{{ selectedCase.externalMetadata.tenorMonths }} months</strong>
-          </div>
-        </div>
-
-        <mat-divider class="my-3"></mat-divider>
-
-        <h3 class="shg-title mb-2" style="font-size:14px">Hand-Off Authorization</h3>
-        <div class="p-3 rounded mb-4" style="background:var(--shg-canvas)">
-          <span class="shg-caption d-block mb-1">Secure Token Redirect (JWT)</span>
-          <textarea readonly class="w-100 shg-mono p-2 rounded mb-2" rows="2" style="font-size:10px; resize:none; background:#fff; border:1px solid var(--shg-ink-200)">{{ selectedCase.handOffContext.authToken }}</textarea>
-          <a
-            [href]="selectedCase.handOffContext.redirectUri"
-            target="_blank"
-            mat-flat-button
-            color="primary"
-            class="w-100 gap-1"
-          >
-            <i class="bi bi-box-arrow-up-right"></i>
-            <span>Proceed to Hand-Off Audit</span>
-          </a>
-          <span class="shg-caption d-block text-center mt-1" style="font-size:10px">
-            Expires: {{ selectedCase.handOffContext.tokenExpiry | date:'short' }}
-          </span>
         </div>
 
         <mat-divider class="my-3"></mat-divider>

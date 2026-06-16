@@ -34,14 +34,15 @@ export interface CaseWorkflow {
   status: string;
   currentLevel: number;
   processInstanceKey: number;
-  externalMetadata: CaseExternalMetadata;
-  handOffContext: CaseHandOffContext;
   involvedUsers: string[];
   pendingGroups: string[];
+  pendingUsers?: string[];
   history: CaseHistoryEntry[];
   createdByUser: string;
   createdDate: string;
   lastModifiedDate: string;
+  externalMetadata?: CaseExternalMetadata;
+  handOffContext?: CaseHandOffContext;
 }
 
 export interface CaseQueuePayload {
@@ -274,7 +275,7 @@ export class CaseService {
                 : item.configPath === criteria.value;
             }
             if (criteria.field === 'applicantName') {
-              return item.externalMetadata.applicantName.toLowerCase().includes(criteria.value.toLowerCase());
+              return item.externalMetadata?.applicantName?.toLowerCase().includes(criteria.value.toLowerCase()) ?? false;
             }
             return true;
           });
@@ -323,6 +324,28 @@ export class CaseService {
       failed: cases.filter(c => c.status === 'FAILED').length,
       recentCases: sorted.slice(0, 6)
     };
+  }
+
+  // Create case workflow (POST /api/cms/cases/create)
+  createCase(productId: string, userId: string, configPath: string, substage?: string, transactionPayload?: { [key: string]: any }): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-User-Id':    userId,
+      'X-Product-Id': productId,
+      'Content-Type': 'application/json'
+    });
+
+    const requestObject: any = { configPath };
+    if (substage?.trim()) requestObject['substage'] = substage.trim();
+    if (transactionPayload && Object.keys(transactionPayload).length > 0) {
+      requestObject['transactionPayload'] = transactionPayload;
+    }
+
+    return this.http.post<any>(`${environment.apiUrl}/cms/cases/create`, { requestObject }, { headers }).pipe(
+      catchError(err => {
+        console.warn('Case create API failed, using mock fallback:', err);
+        return of({ success: false, message: 'API unavailable' });
+      })
+    );
   }
 
   // Add dummy case trigger (facilitates UI validation check)

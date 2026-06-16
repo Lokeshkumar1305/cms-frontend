@@ -12,6 +12,7 @@ export interface ApprovalTier {
   level: number;
   tierName: string;
   authorizedGroups: string[];
+  authorizedUsers: string[];
   strictBinding: boolean;
 }
 
@@ -70,8 +71,8 @@ export class ConfigurationService {
       approvalSettings: {
         totalRequiredLevels: 2,
         tiers: [
-          { level: 1, tierName: 'Automated Score Validation Check', authorizedGroups: ['EXPRESS_MAKER_GP'], strictBinding: true },
-          { level: 2, tierName: 'Manager Final Audit Confirmation', authorizedGroups: ['EXPRESS_CHECKER_GP'], strictBinding: true }
+          { level: 1, tierName: 'Automated Score Validation Check', authorizedGroups: ['EXPRESS_MAKER_GP'], authorizedUsers: [], strictBinding: true },
+          { level: 2, tierName: 'Manager Final Audit Confirmation', authorizedGroups: ['EXPRESS_CHECKER_GP'], authorizedUsers: [], strictBinding: true }
         ]
       },
       notificationSettings: {
@@ -147,12 +148,12 @@ export class ConfigurationService {
   // Create Case Configuration (POST http://localhost:8091/api/cms/configuration/create)
   createCaseConfiguration(productId: string, config: Omit<CaseConfiguration, 'id' | 'productId' | 'createdDate' | 'lastModifiedDate' | 'modifiedByUser'>): Observable<any> {
     const headers = new HttpHeaders({
-      'X-User-Id': 'system_admin',
+      'X-User-Id':    'system_admin',
+      'X-Product-Id': productId,
       'Content-Type': 'application/json'
     });
 
     const payload = {
-      productId,
       requestObject: config
     };
 
@@ -201,10 +202,11 @@ export class ConfigurationService {
     );
   }
 
-  // Update Case Configuration (PUT http://localhost:8091/api/cms/configuration/update)
-  updateCaseConfiguration(configId: string, updateData: { nodeName?: string; globalSlaTimeoutMinutes?: number; notificationSettings?: NotificationSettings }): Observable<any> {
+  // Update Case Configuration (POST /api/cms/configuration/update)
+  updateCaseConfiguration(configId: string, updateData: { [key: string]: any }, productId?: string): Observable<any> {
     const headers = new HttpHeaders({
-      'X-User-Id': 'system_admin',
+      'X-User-Id':    'system_admin',
+      'X-Product-Id': productId || '',
       'Content-Type': 'application/json'
     });
 

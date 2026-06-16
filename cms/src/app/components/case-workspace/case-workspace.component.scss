@@ -125,6 +125,47 @@
   color: var(--shg-ink-500);
 }
 
+.optional-tag {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--shg-ink-400);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.add-row-btn {
+  height: 28px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 0 10px !important;
+  border-color: var(--shg-ink-200) !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.remove-row-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #dee2e6;
+  background: #fff;
+  color: #6c757d;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  flex-shrink: 0;
+  padding: 0;
+
+  &:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    color: #dc2626;
+  }
+}
+
 .save-btn {
   height: 38px !important;
   font-weight: 600 !important;

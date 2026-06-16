@@ -213,13 +213,16 @@
 }
 
 .action-btn {
-  height: 44px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  display: flex !important;
+  height: 32px !important;
+  min-width: unset !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 0 12px !important;
+  line-height: 1 !important;
 }
 
 .spinner-inline {

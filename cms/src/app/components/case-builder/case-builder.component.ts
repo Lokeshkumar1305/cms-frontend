@@ -1,6 +1,7 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ConfigurationService, CaseConfiguration, NotificationSettings } from '../../services/configuration.service';
 import { TenantContextService } from '../../services/tenant-context.service';
 import { Sort } from '@angular/material/sort';
@@ -37,6 +38,7 @@ export class CaseBuilderComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
+    private router: Router,
     private configService: ConfigurationService,
     private tenantContext: TenantContextService
   ) {}
@@ -83,6 +85,10 @@ export class CaseBuilderComponent implements OnInit {
       },
       error: () => { this.isLoading = false; }
     });
+  }
+
+  navigateToEdit(config: CaseConfiguration): void {
+    this.router.navigate(['/case-config/create'], { state: { config, mode: 'edit' } });
   }
 
   selectConfigForEdit(config: CaseConfiguration): void {

@@ -9,8 +9,8 @@
       <i class="bi bi-arrow-left me-1"></i>
       <span>Back to Case Config</span>
     </button>
-    <h1 class="shg-display mb-1">New Configuration</h1>
-    <p class="shg-caption">Register a case workflow pipeline for the active tenant.</p>
+    <h1 class="shg-display mb-1">{{ editMode ? 'Edit Configuration' : 'New Configuration' }}</h1>
+    <p class="shg-caption">{{ editMode ? 'Update the case workflow pipeline settings.' : 'Register a case workflow pipeline for the active tenant.' }}</p>
   </div>
 
   <!-- No Tenant Guard -->
@@ -95,13 +95,33 @@
                   <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
                   <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file-name"
                     [(ngModel)]="item.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                  <label [attr.for]="mainUploadStates[wIdx] ? null : 'bpmn-main-' + wIdx"
-                    class="upload-bpmn-btn mb-0" [class.uploading]="mainUploadStates[wIdx]">
-                    <mat-spinner *ngIf="mainUploadStates[wIdx]" diameter="12"></mat-spinner>
-                    <i *ngIf="!mainUploadStates[wIdx]" class="bi bi-upload"></i>
-                    <span>{{ mainUploadStates[wIdx] ? 'Uploading...' : 'Upload' }}</span>
+                  <!-- Uploading -->
+                  <span *ngIf="mainUploadStates[wIdx]" class="upload-bpmn-btn uploading mb-0">
+                    <mat-spinner diameter="12"></mat-spinner>
+                    <span>Uploading...</span>
+                  </span>
+                  <!-- Uploaded -->
+                  <ng-container *ngIf="!mainUploadStates[wIdx] && mainUploadedStates[wIdx]">
+                    <span class="file-uploaded-chip">
+                      <i class="bi bi-check-circle-fill"></i> Uploaded
+                    </span>
+                    <label [attr.for]="'bpmn-reup-main-' + wIdx" class="upload-bpmn-btn mb-0" title="Re-upload">
+                      <i class="bi bi-arrow-repeat"></i>
+                      <span>Re-upload</span>
+                      <input [id]="'bpmn-reup-main-' + wIdx" type="file" accept=".bpmn,.xml" style="display:none"
+                        (change)="onBpmnFileSelect($event, wIdx)" />
+                    </label>
+                    <button type="button" class="remove-file-btn" (click)="clearMainUpload(wIdx)" title="Remove file">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </ng-container>
+                  <!-- Default -->
+                  <label *ngIf="!mainUploadStates[wIdx] && !mainUploadedStates[wIdx]"
+                    [attr.for]="'bpmn-main-' + wIdx" class="upload-bpmn-btn mb-0">
+                    <i class="bi bi-upload"></i>
+                    <span>Upload</span>
                     <input [id]="'bpmn-main-' + wIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                      [disabled]="mainUploadStates[wIdx]" (change)="onBpmnFileSelect($event, wIdx)" />
+                      (change)="onBpmnFileSelect($event, wIdx)" />
                   </label>
                   <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
                     style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
@@ -122,13 +142,33 @@
                   <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
                   <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file (optional)"
                     [(ngModel)]="sub.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                  <label [attr.for]="subUploadStates[sIdx] ? null : 'bpmn-sub-' + sIdx"
-                    class="upload-bpmn-btn mb-0" [class.uploading]="subUploadStates[sIdx]">
-                    <mat-spinner *ngIf="subUploadStates[sIdx]" diameter="12"></mat-spinner>
-                    <i *ngIf="!subUploadStates[sIdx]" class="bi bi-upload"></i>
-                    <span>{{ subUploadStates[sIdx] ? 'Uploading...' : 'Upload' }}</span>
+                  <!-- Uploading -->
+                  <span *ngIf="subUploadStates[sIdx]" class="upload-bpmn-btn uploading mb-0">
+                    <mat-spinner diameter="12"></mat-spinner>
+                    <span>Uploading...</span>
+                  </span>
+                  <!-- Uploaded -->
+                  <ng-container *ngIf="!subUploadStates[sIdx] && subUploadedStates[sIdx]">
+                    <span class="file-uploaded-chip">
+                      <i class="bi bi-check-circle-fill"></i> Uploaded
+                    </span>
+                    <label [attr.for]="'bpmn-reup-sub-' + sIdx" class="upload-bpmn-btn mb-0" title="Re-upload">
+                      <i class="bi bi-arrow-repeat"></i>
+                      <span>Re-upload</span>
+                      <input [id]="'bpmn-reup-sub-' + sIdx" type="file" accept=".bpmn,.xml" style="display:none"
+                        (change)="onSubstageBpmnUpload($event, sIdx)" />
+                    </label>
+                    <button type="button" class="remove-file-btn" (click)="clearSubUpload(sIdx)" title="Remove file">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </ng-container>
+                  <!-- Default -->
+                  <label *ngIf="!subUploadStates[sIdx] && !subUploadedStates[sIdx]"
+                    [attr.for]="'bpmn-sub-' + sIdx" class="upload-bpmn-btn mb-0">
+                    <i class="bi bi-upload"></i>
+                    <span>Upload</span>
                     <input [id]="'bpmn-sub-' + sIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                      [disabled]="subUploadStates[sIdx]" (change)="onSubstageBpmnUpload($event, sIdx)" />
+                      (change)="onSubstageBpmnUpload($event, sIdx)" />
                   </label>
                   <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
                     style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
@@ -196,7 +236,7 @@
             </div>
           </mat-card>
 
-          <mat-card class="form-section-card p-4">
+          <mat-card class="form-section-card p-4 mb-4">
             <div class="form-section-label">Notifications</div>
 
             <div class="notify-panel p-3 rounded-3">
@@ -209,12 +249,18 @@
                   <label class="field-label">Target email</label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                     <input matInput type="email" formControlName="notifyEmail" placeholder="e.g. alerts@example.com" />
+                    <mat-error *ngIf="createForm.get('notifyEmail')?.hasError('email') || createForm.get('notifyEmail')?.hasError('pattern')">
+                      Enter a valid email address
+                    </mat-error>
                   </mat-form-field>
                 </div>
                 <div class="field-group">
                   <label class="field-label">Target mobile</label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="text" formControlName="notifyMobile" placeholder="+91 XXXXX XXXXX" />
+                    <input matInput type="tel" formControlName="notifyMobile" placeholder="e.g. 9876543210" maxlength="10" />
+                    <mat-error *ngIf="createForm.get('notifyMobile')?.hasError('pattern') || createForm.get('notifyMobile')?.hasError('maxlength')">
+                      Enter a valid 10-digit Indian mobile number
+                    </mat-error>
                   </mat-form-field>
                 </div>
                 <div class="d-flex gap-4 mt-1">
@@ -224,6 +270,103 @@
                 </div>
               </div>
             </div>
+          </mat-card>
+
+          <!-- Approval Settings Card -->
+          <mat-card class="form-section-card p-4" [class.required-card-error]="approvalTiersError">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <div class="d-flex align-items-center gap-2">
+                <div class="form-section-label mb-0">Approval Settings</div>
+                <span class="required-badge">Required</span>
+              </div>
+              <button type="button" mat-stroked-button class="add-tier-btn" (click)="addApprovalTier()">
+                + Add Tier
+              </button>
+            </div>
+
+            <!-- Error message -->
+            <div *ngIf="approvalTiersError" class="d-flex align-items-center gap-2 mb-3 mt-1 px-2 py-2 rounded-2"
+              style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px;">
+              <i class="bi bi-exclamation-circle-fill"></i>
+              <span>{{ approvalTiersError }}</span>
+            </div>
+
+            <div *ngIf="approvalTiers.length === 0 && !approvalTiersError" class="text-center py-3 mb-0"
+              style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
+              No approval tiers added
+            </div>
+            <div *ngIf="approvalTiers.length === 0 && approvalTiersError" class="text-center py-3 mb-0"
+              style="color:#dc2626; font-size:12px; border:1px dashed rgba(220,38,38,0.4); border-radius:8px; background:rgba(220,38,38,0.04)">
+              Add at least one approval tier to proceed
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+              <div *ngFor="let tier of approvalTiers; let i = index" class="approval-tier-card p-3 rounded-3 border">
+
+                <!-- Tier Header -->
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="tier-level-badge">Level {{ i + 1 }}</span>
+                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
+                    style="font-size:12px; text-decoration:none" (click)="removeApprovalTier(i)">Remove</button>
+                </div>
+
+                <!-- Tier Name -->
+                <div class="field-group">
+                  <label class="field-label">Tier name</label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput [(ngModel)]="tier.tierName" [ngModelOptions]="{standalone:true}"
+                      placeholder="e.g. Manager Final Audit" />
+                  </mat-form-field>
+                </div>
+
+                <!-- Authorized Groups -->
+                <div class="field-group">
+                  <label class="field-label">Authorized groups</label>
+                  <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedGroups.length > 0">
+                    <span *ngFor="let grp of tier.authorizedGroups; let j = index" class="group-chip">
+                      {{ grp }}
+                      <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromTier(i, j)"></i>
+                    </span>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                      <input matInput [(ngModel)]="tier.newGroup" [ngModelOptions]="{standalone:true}"
+                        placeholder="e.g. CHECKER_GP"
+                        (keyup.enter)="addGroupToTier(i)" />
+                    </mat-form-field>
+                    <button type="button" mat-stroked-button class="add-group-btn" (click)="addGroupToTier(i)">Add</button>
+                  </div>
+                </div>
+
+                <!-- Authorized Users -->
+                <div class="field-group">
+                  <label class="field-label">Authorized users</label>
+                  <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedUsers.length > 0">
+                    <span *ngFor="let usr of tier.authorizedUsers; let j = index" class="user-chip">
+                      {{ usr }}
+                      <i class="bi bi-x" style="cursor:pointer" (click)="removeUserFromTier(i, j)"></i>
+                    </span>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                      <input matInput [(ngModel)]="tier.newUser" [ngModelOptions]="{standalone:true}"
+                        placeholder="e.g. retail_agent_01"
+                        (keyup.enter)="addUserToTier(i)" />
+                    </mat-form-field>
+                    <button type="button" mat-stroked-button class="add-group-btn" (click)="addUserToTier(i)">Add</button>
+                  </div>
+                </div>
+
+                <!-- Strict Binding -->
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                  <span class="field-label mb-0">Strict binding</span>
+                  <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}"
+                    color="primary"></mat-slide-toggle>
+                </div>
+
+              </div>
+            </div>
+
           </mat-card>
 
         </div>
@@ -240,6 +383,6 @@
   <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
   <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
     <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
-    <span>{{ isSubmitting ? 'Creating...' : 'Register Configuration' }}</span>
+    <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
   </button>
 </div>
