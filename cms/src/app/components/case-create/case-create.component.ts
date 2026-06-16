@@ -21,15 +21,16 @@ export class CaseCreateComponent implements OnInit {
   nodes: string[] = ['LOAN', 'RETAIL', 'EXPRESS'];
   newNodeName = '';
 
-  nodeWorkflows: {
-    nodeName: string;
-    bpmnFile: string;
-    substageOverrides: { substage: string; bpmnFile: string }[];
-  }[] = [
-    { nodeName: 'LOAN',    bpmnFile: 'universal-case-flow',  substageOverrides: [] },
-    { nodeName: 'RETAIL',  bpmnFile: '',                     substageOverrides: [] },
-    { nodeName: 'EXPRESS', bpmnFile: 'retail-express-flow',  substageOverrides: [] }
+  nodeWorkflows: { nodeName: string; bpmnFile: string }[] = [
+    { nodeName: 'LOAN',    bpmnFile: 'universal-case-flow' },
+    { nodeName: 'RETAIL',  bpmnFile: '' },
+    { nodeName: 'EXPRESS', bpmnFile: 'retail-express-flow' }
   ];
+
+  substageEntries: { name: string; bpmnFile: string }[] = [];
+
+  mainUploadStates: boolean[] = [];
+  subUploadStates: boolean[] = [];
 
   private destroyRef = inject(DestroyRef);
 
@@ -62,10 +63,11 @@ export class CaseCreateComponent implements OnInit {
       fallbackAdminUserId:     ['retail_operations_manager',        [Validators.required]],
       fallbackAdminGroupId:    ['RETAIL_ADMIN_GP',                  [Validators.required]],
       notifyEnabled:           [true],
-      notifyEmail:             ['retail-alerts@toucan.com',         [Validators.email]],
-      notifyMobile:            ['+1234567890'],
-      notifySMSChannel:        [true],
-      notifyEmailChannel:      [true]
+      notifyEmail:             ['', [Validators.email]],
+      notifyMobile:            [''],
+      notifySMSChannel:        [false],
+      notifyEmailChannel:      [false],
+      notifyWhatsAppChannel:   [false]
     });
   }
 
@@ -98,18 +100,56 @@ export class CaseCreateComponent implements OnInit {
         let defaultBpmn = '';
         if (node === 'LOAN')    defaultBpmn = 'universal-case-flow';
         if (node === 'EXPRESS') defaultBpmn = 'retail-express-flow';
-        updated.push({ nodeName: node, bpmnFile: defaultBpmn, substageOverrides: [] });
+        updated.push({ nodeName: node, bpmnFile: defaultBpmn });
       }
     }
     this.nodeWorkflows = updated;
   }
 
-  addSubstageOverride(wIdx: number): void {
-    this.nodeWorkflows[wIdx].substageOverrides.push({ substage: '', bpmnFile: '' });
+  addSubstage(): void {
+    this.substageEntries.push({ name: '', bpmnFile: '' });
   }
 
-  removeSubstageOverride(wIdx: number, oIdx: number): void {
-    this.nodeWorkflows[wIdx].substageOverrides.splice(oIdx, 1);
+  removeSubstage(idx: number): void {
+    this.substageEntries.splice(idx, 1);
+  }
+
+  onBpmnFileSelect(event: Event, wIdx: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    input.value = '';
+
+    this.mainUploadStates[wIdx] = true;
+    this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
+      next: (res) => {
+        this.mainUploadStates[wIdx] = false;
+        this.nodeWorkflows[wIdx].bpmnFile = res?.responseObject?.processKey || file.name.replace(/\.(bpmn|xml)$/i, '');
+      },
+      error: () => {
+        this.mainUploadStates[wIdx] = false;
+        this.nodeWorkflows[wIdx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+      }
+    });
+  }
+
+  onSubstageBpmnUpload(event: Event, idx: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    input.value = '';
+
+    this.subUploadStates[idx] = true;
+    this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
+      next: (res) => {
+        this.subUploadStates[idx] = false;
+        this.substageEntries[idx].bpmnFile = res?.responseObject?.processKey || file.name.replace(/\.(bpmn|xml)$/i, '');
+      },
+      error: () => {
+        this.subUploadStates[idx] = false;
+        this.substageEntries[idx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+      }
+    });
   }
 
   onSubmit(): void {
@@ -127,16 +167,17 @@ export class CaseCreateComponent implements OnInit {
       if (item.nodeName.trim() && item.bpmnFile.trim()) {
         workflowKeys[item.nodeName.trim()] = item.bpmnFile.trim();
       }
-      for (const override of item.substageOverrides) {
-        if (override.substage.trim() && override.bpmnFile.trim()) {
-          workflowKeys[override.substage.trim()] = override.bpmnFile.trim();
-        }
+    }
+    for (const sub of this.substageEntries) {
+      if (sub.name.trim() && sub.bpmnFile.trim()) {
+        workflowKeys[sub.name.trim()] = sub.bpmnFile.trim();
       }
     }
 
     const channels: string[] = [];
-    if (formVal.notifySMSChannel)   channels.push('SMS');
-    if (formVal.notifyEmailChannel) channels.push('EMAIL');
+    if (formVal.notifySMSChannel)      channels.push('SMS');
+    if (formVal.notifyEmailChannel)   channels.push('EMAIL');
+    if (formVal.notifyWhatsAppChannel) channels.push('WHATSAPP');
 
     const notificationSettings: NotificationSettings = {
       enabled:             formVal.notifyEnabled,

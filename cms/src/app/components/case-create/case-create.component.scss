@@ -41,14 +41,21 @@
 // Page header
 // ============================================================
 .back-btn {
-  flex-shrink: 0;
-  border: 1px solid var(--shg-ink-200) !important;
+  height: 34px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--shg-ink-700) !important;
+  border-color: var(--shg-ink-200) !important;
   background: #fff !important;
-  color: var(--shg-ink-900) !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px !important;
 
   &:hover {
     background: var(--shg-canvas) !important;
-    border-color: var(--shg-ink-500) !important;
+    border-color: var(--shg-ink-400) !important;
+    color: var(--shg-ink-900) !important;
   }
 }
 
@@ -137,6 +144,53 @@
   letter-spacing: 0.5px;
   padding: 2px 8px !important;
   white-space: nowrap;
+}
+
+.upload-bpmn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: 1px solid #dee2e6;
+  background: #ffffff;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin: 0;
+  line-height: 1.5;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+  }
+
+  &.uploading {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.workflow-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+
+  .connector-line {
+    width: 2px;
+    height: 12px;
+    background: var(--shg-ink-200);
+  }
+
+  .connector-arrow {
+    font-size: 10px;
+    color: var(--shg-ink-300);
+    line-height: 1;
+  }
 }
 
 .add-substage-btn {

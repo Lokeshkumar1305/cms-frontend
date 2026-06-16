@@ -266,6 +266,26 @@ export class ConfigurationService {
     );
   }
 
+  // Deploy BPMN file (POST /api/cms/process/deploy)
+  deployBpmnFile(productId: string, userId: string, file: File): Observable<any> {
+    const headers = new HttpHeaders()
+      .set('X-Product-Id', productId)
+      .set('X-User-Id', userId);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<any>(`${environment.apiUrl}/cms/process/deploy`, formData, { headers }).pipe(
+      catchError(err => {
+        console.warn('BPMN deploy API failed:', err);
+        return of({
+          success: false,
+          message: 'BPMN deploy failed'
+        });
+      })
+    );
+  }
+
   private syncLocalConfig(config: CaseConfiguration): void {
     const idx = this.mockConfigs.findIndex(c => c.id === config.id);
     if (idx !== -1) {

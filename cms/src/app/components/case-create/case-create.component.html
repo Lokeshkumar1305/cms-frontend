@@ -4,14 +4,13 @@
 <div class="create-scroll-area">
 
   <!-- Page Header -->
-  <div class="mb-4 d-flex align-items-center gap-3">
-    <button mat-icon-button (click)="cancel()" class="back-btn" aria-label="Back">
-      <i class="bi bi-arrow-left" style="font-size:18px"></i>
+  <div class="mb-4">
+    <button mat-stroked-button (click)="cancel()" class="back-btn mb-3">
+      <i class="bi bi-arrow-left me-1"></i>
+      <span>Back to Case Config</span>
     </button>
-    <div>
-      <h1 class="shg-display mb-1">New Configuration</h1>
-      <p class="shg-caption">Register a case workflow pipeline for the active tenant.</p>
-    </div>
+    <h1 class="shg-display mb-1">New Configuration</h1>
+    <p class="shg-caption">Register a case workflow pipeline for the active tenant.</p>
   </div>
 
   <!-- No Tenant Guard -->
@@ -56,7 +55,7 @@
 
             <div class="form-section-label">Path & Workflow</div>
 
-            <label class="field-label">Routing path</label>
+            <label class="field-label">Case type</label>
             <div class="d-flex align-items-center gap-2 mb-2">
               <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
                 <input matInput placeholder="Add node, e.g. LOAN"
@@ -86,33 +85,69 @@
             <mat-divider class="mb-4"></mat-divider>
             <div class="form-section-label">Workflow keys → BPMN file</div>
 
-            <div class="d-flex flex-column gap-2">
-              <div *ngFor="let item of nodeWorkflows; let wIdx = index" class="p-2 rounded-3 border bg-white">
-                <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="d-flex flex-column mb-2">
+
+              <!-- Main case type rows (one per node, fixed name) -->
+              <ng-container *ngFor="let item of nodeWorkflows; let wIdx = index; let lastMain = last">
+                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white">
                   <span class="path-node-badge px-2 py-1 rounded border fw-semibold text-uppercase"
-                    style="font-size:10px">{{ item.nodeName }}</span>
-                  <span class="locked-badge rounded border fw-bold text-uppercase">LOCKED</span>
+                    style="font-size:10px; flex-shrink:0">{{ item.nodeName }}</span>
+                  <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
                   <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file-name"
                     [(ngModel)]="item.bpmnFile" [ngModelOptions]="{standalone: true}" />
+                  <label [attr.for]="mainUploadStates[wIdx] ? null : 'bpmn-main-' + wIdx"
+                    class="upload-bpmn-btn mb-0" [class.uploading]="mainUploadStates[wIdx]">
+                    <mat-spinner *ngIf="mainUploadStates[wIdx]" diameter="12"></mat-spinner>
+                    <i *ngIf="!mainUploadStates[wIdx]" class="bi bi-upload"></i>
+                    <span>{{ mainUploadStates[wIdx] ? 'Uploading...' : 'Upload' }}</span>
+                    <input [id]="'bpmn-main-' + wIdx" type="file" accept=".bpmn,.xml" style="display:none"
+                      [disabled]="mainUploadStates[wIdx]" (change)="onBpmnFileSelect($event, wIdx)" />
+                  </label>
                   <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                    style="font-size:13px; text-decoration:none; white-space:nowrap;" (click)="removeNode(wIdx)">
-                    Remove
-                  </button>
+                    style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
+                    (click)="removeNode(wIdx)">Remove</button>
                 </div>
-                <div *ngFor="let o of item.substageOverrides; let oIdx = index; let last = last"
-                  class="d-flex align-items-center gap-2 mb-2">
-                  <input type="text" class="form-control form-control-sm" style="width:130px; flex-shrink:0"
-                    placeholder="substage key" [(ngModel)]="o.substage" [ngModelOptions]="{standalone: true}" />
-                  <input type="text" class="form-control form-control-sm flex-grow-1"
-                    placeholder="bpmn-file-name" [(ngModel)]="o.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                  <button *ngIf="last" type="button" mat-stroked-button class="add-substage-btn"
-                    (click)="addSubstageOverride(wIdx)">+ Add Substage Override</button>
+                <!-- Workflow connector between main rows -->
+                <div *ngIf="!lastMain || substageEntries.length > 0" class="workflow-connector">
+                  <div class="connector-line"></div>
+                  <i class="bi bi-chevron-down connector-arrow"></i>
                 </div>
-                <div *ngIf="item.substageOverrides.length === 0" class="d-flex justify-content-end">
-                  <button type="button" mat-stroked-button class="add-substage-btn"
-                    (click)="addSubstageOverride(wIdx)">+ Add Substage Override</button>
+              </ng-container>
+
+              <!-- Substage rows (same structure, editable name) -->
+              <ng-container *ngFor="let sub of substageEntries; let sIdx = index; let lastSub = last">
+                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white">
+                  <input type="text" class="form-control form-control-sm" style="width:90px; flex-shrink:0"
+                    placeholder="substage" [(ngModel)]="sub.name" [ngModelOptions]="{standalone: true}" />
+                  <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
+                  <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file (optional)"
+                    [(ngModel)]="sub.bpmnFile" [ngModelOptions]="{standalone: true}" />
+                  <label [attr.for]="subUploadStates[sIdx] ? null : 'bpmn-sub-' + sIdx"
+                    class="upload-bpmn-btn mb-0" [class.uploading]="subUploadStates[sIdx]">
+                    <mat-spinner *ngIf="subUploadStates[sIdx]" diameter="12"></mat-spinner>
+                    <i *ngIf="!subUploadStates[sIdx]" class="bi bi-upload"></i>
+                    <span>{{ subUploadStates[sIdx] ? 'Uploading...' : 'Upload' }}</span>
+                    <input [id]="'bpmn-sub-' + sIdx" type="file" accept=".bpmn,.xml" style="display:none"
+                      [disabled]="subUploadStates[sIdx]" (change)="onSubstageBpmnUpload($event, sIdx)" />
+                  </label>
+                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
+                    style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
+                    (click)="removeSubstage(sIdx)">Remove</button>
                 </div>
-              </div>
+                <!-- Connector between substage rows (not after the last) -->
+                <div *ngIf="!lastSub" class="workflow-connector">
+                  <div class="connector-line"></div>
+                  <i class="bi bi-chevron-down connector-arrow"></i>
+                </div>
+              </ng-container>
+
+            </div>
+
+            <!-- Add Substage button — shown once at bottom of section -->
+            <div class="d-flex justify-content-end" *ngIf="nodeWorkflows.length > 1">
+              <button type="button" mat-stroked-button class="add-substage-btn" (click)="addSubstage()">
+                + Add Substage
+              </button>
             </div>
 
           </mat-card>
@@ -173,18 +208,19 @@
                 <div class="field-group">
                   <label class="field-label">Target email</label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="email" formControlName="notifyEmail" />
+                    <input matInput type="email" formControlName="notifyEmail" placeholder="e.g. alerts@example.com" />
                   </mat-form-field>
                 </div>
                 <div class="field-group">
                   <label class="field-label">Target mobile</label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="text" formControlName="notifyMobile" />
+                    <input matInput type="text" formControlName="notifyMobile" placeholder="+91 XXXXX XXXXX" />
                   </mat-form-field>
                 </div>
                 <div class="d-flex gap-4 mt-1">
                   <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
                   <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
+                  <mat-checkbox formControlName="notifyWhatsAppChannel" color="primary">WHATSAPP</mat-checkbox>
                 </div>
               </div>
             </div>

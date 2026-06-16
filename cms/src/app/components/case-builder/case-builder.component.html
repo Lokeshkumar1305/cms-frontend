@@ -25,7 +25,7 @@
     <i class="bi bi-check-circle-fill"></i>
     <span class="shg-caption m-0 fw-semibold">{{ successMessage }}</span>
   </div>
-  <div *ngIf="errorMessage && !showCreateForm" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
+  <div *ngIf="errorMessage" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
     <i class="bi bi-exclamation-triangle-fill"></i>
     <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
   </div>
@@ -37,9 +37,9 @@
       <span class="shg-body m-0">Active Tenant: <strong>{{ activeProductName }}</strong></span>
       <span class="shg-mono px-3 py-1 rounded ms-auto" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
     </div>
-    <button mat-flat-button color="primary" (click)="showCreateForm ? closeSidePanel() : openCreateForm()" class="gap-1 filter-btn">
-      <i class="bi" [class.bi-plus-lg]="!showCreateForm" [class.bi-dash-lg]="showCreateForm"></i>
-      <span>{{ showCreateForm ? 'Close' : 'New Configuration' }}</span>
+    <button mat-flat-button color="primary" routerLink="/case-config/create" class="gap-1 filter-btn">
+      <i class="bi bi-plus-lg"></i>
+      <span>New Configuration</span>
     </button>
   </div>
 
@@ -47,7 +47,7 @@
   <div class="row g-4">
 
     <!-- Left: Configuration Table -->
-    <div class="col-12" [class.col-lg-7]="showCreateForm || selectedConfigForUpdate">
+    <div class="col-12" [class.col-lg-7]="selectedConfigForUpdate">
       <mat-card class="queue-table-card">
 
         <table mat-table [dataSource]="configurations" matSort (matSortChange)="onSortChange($event)" class="w-100">
@@ -170,263 +170,82 @@
       </mat-card>
     </div>
 
-    <!-- Right: Side Panel (Create or Edit) -->
-    <div class="col-12 col-lg-5 animate-slide" *ngIf="showCreateForm || selectedConfigForUpdate">
+    <!-- Right: Edit Side Panel -->
+    <div class="col-12 col-lg-5 animate-slide" *ngIf="selectedConfigForUpdate">
       <mat-card class="side-panel p-0 d-flex flex-column">
 
-        <!-- ============ CREATE MODE ============ -->
-        <ng-container *ngIf="showCreateForm">
-
-          <!-- Panel Header -->
-          <div class="side-panel-header d-flex align-items-center justify-content-between px-4 py-3">
-            <div>
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-plus-circle-fill" style="color:var(--shg-primary); font-size:18px"></i>
-                <h3 class="shg-title m-0">New Configuration</h3>
-              </div>
-              <p class="shg-caption m-0 mt-1" style="color:var(--shg-ink-500)">Register a case workflow pipeline</p>
+        <div class="side-panel-header d-flex align-items-center justify-content-between px-4 py-3">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-pencil-fill" style="color:var(--shg-primary); font-size:16px"></i>
+              <h3 class="shg-title m-0">Edit Configuration</h3>
             </div>
-            <button mat-icon-button (click)="closeSidePanel()" aria-label="Close">
-              <i class="bi bi-x-lg"></i>
-            </button>
+            <p class="shg-caption m-0 mt-1" style="color:var(--shg-ink-500)">
+              Editing: <code>{{ selectedConfigForUpdate.configPath }}</code>
+            </p>
           </div>
+          <button mat-icon-button (click)="closeSidePanel()" aria-label="Close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
 
-          <mat-divider></mat-divider>
+        <div class="side-panel-body flex-grow-1 px-4 py-3 overflow-auto">
+          <form [formGroup]="updateForm" (ngSubmit)="onUpdateConfig()" novalidate>
+            <div class="form-section-label">Node Settings</div>
 
-          <!-- Panel Body -->
-          <div class="side-panel-body flex-grow-1 px-4 py-3 overflow-auto">
-            <form [formGroup]="createForm" novalidate>
+            <div class="field-group">
+              <label class="field-label">Node name</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput formControlName="nodeName" />
+              </mat-form-field>
+            </div>
 
-              <!-- Error banner -->
-              <div *ngIf="errorMessage" class="shg-alert-banner err d-flex align-items-center gap-2 p-3 rounded-3 mb-3">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
+            <div class="field-group">
+              <label class="field-label">Global SLA timeout (minutes)</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
+              </mat-form-field>
+            </div>
+
+            <mat-divider class="my-3"></mat-divider>
+            <div class="form-section-label">Notifications</div>
+
+            <div class="notify-panel p-3 rounded-3 mb-3">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <span class="fw-semibold shg-body">Enable Notifications</span>
+                <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
               </div>
-
-              <!-- ---- Section: Path & Workflow ---- -->
-              <div class="form-section-label">Path &amp; Workflow</div>
-
-              <div class="field-group">
-                <label class="field-label">Routing path</label>
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                    <input matInput placeholder="Add node, e.g. LOAN"
-                      [(ngModel)]="newNodeName"
-                      [ngModelOptions]="{standalone: true}"
-                      (keyup.enter)="addNode()" />
+              <div *ngIf="updateForm.get('notifyEnabled')?.value">
+                <div class="field-group">
+                  <label class="field-label">Target email</label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput type="email" formControlName="notifyEmail" />
                   </mat-form-field>
-                  <button mat-flat-button color="primary" type="button" class="add-node-btn" (click)="addNode()">
-                    + Add
-                  </button>
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-2" *ngIf="nodes.length > 0">
-                  <ng-container *ngFor="let node of nodes; let i = index; let last = last">
-                    <span class="path-node-tag d-flex align-items-center gap-1 px-2 py-1 rounded border">
-                      <span class="fw-semibold text-uppercase" style="font-size:11px">{{ node }}</span>
-                      <i class="bi bi-x" (click)="removeNode(i)"></i>
-                    </span>
-                    <span *ngIf="!last" class="text-muted"><i class="bi bi-chevron-right" style="font-size:9px"></i></span>
-                  </ng-container>
+                <div class="field-group">
+                  <label class="field-label">Target mobile</label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput type="text" formControlName="notifyMobile" />
+                  </mat-form-field>
                 </div>
-                <div class="compiled-path-box p-2 rounded" *ngIf="nodes.length > 0" style="font-size:12px">
-                  {{ nodes.join('.') }}
+                <div class="d-flex gap-4 mt-1">
+                  <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
+                  <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
                 </div>
               </div>
-
-              <mat-divider class="my-3"></mat-divider>
-
-              <!-- ---- Section: BPMN File ---- -->
-              <div class="form-section-label">Workflow keys → BPMN file</div>
-
-              <div class="d-flex flex-column gap-2 mb-3">
-                <div *ngFor="let item of nodeWorkflows; let wIdx = index" class="p-2 rounded-3 border bg-white">
-                  <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="path-node-badge px-2 py-1 rounded fw-semibold text-uppercase" style="font-size:10px">{{ item.nodeName }}</span>
-                    <span class="locked-badge rounded fw-bold text-uppercase">LOCKED</span>
-                    <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file-name"
-                      [(ngModel)]="item.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                    <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                      style="font-size:12px; text-decoration:none; white-space:nowrap;" (click)="removeNode(wIdx)">
-                      Remove
-                    </button>
-                  </div>
-                  <div *ngFor="let o of item.substageOverrides; let oIdx = index; let last = last"
-                    class="d-flex align-items-center gap-2 mb-2">
-                    <input type="text" class="form-control form-control-sm" style="width:90px; flex-shrink:0"
-                      placeholder="substage" [(ngModel)]="o.substage" [ngModelOptions]="{standalone: true}" />
-                    <input type="text" class="form-control form-control-sm flex-grow-1"
-                      placeholder="bpmn-file" [(ngModel)]="o.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                    <button *ngIf="last" type="button" mat-stroked-button class="add-substage-btn"
-                      (click)="addSubstageOverride(wIdx)">+ Substage</button>
-                  </div>
-                  <div *ngIf="item.substageOverrides.length === 0" class="d-flex justify-content-end">
-                    <button type="button" mat-stroked-button class="add-substage-btn"
-                      (click)="addSubstageOverride(wIdx)">+ Add Substage Override</button>
-                  </div>
-                </div>
-              </div>
-
-              <mat-divider class="my-3"></mat-divider>
-
-              <!-- ---- Section: Node Settings ---- -->
-              <div class="form-section-label">Node Settings</div>
-
-              <div class="field-group">
-                <label class="field-label">Node title</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput formControlName="nodeName" placeholder="e.g. Retail Express Node" />
-                </mat-form-field>
-              </div>
-
-              <div class="field-group">
-                <label class="field-label">Depth level</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput type="number" formControlName="currentDepthLevel" />
-                </mat-form-field>
-              </div>
-
-              <div class="field-group">
-                <label class="field-label">SLA timeout (minutes)</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
-                </mat-form-field>
-              </div>
-
-              <div class="field-group">
-                <label class="field-label">Fallback admin user</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput formControlName="fallbackAdminUserId" placeholder="e.g. retail_ops_manager" />
-                </mat-form-field>
-              </div>
-
-              <div class="field-group">
-                <label class="field-label">Fallback admin group</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput formControlName="fallbackAdminGroupId" placeholder="e.g. RETAIL_ADMIN_GP" />
-                </mat-form-field>
-                <span class="field-hint">Uppercase alphanumeric only (A-Z, 0-9, _)</span>
-              </div>
-
-              <mat-divider class="my-3"></mat-divider>
-
-              <!-- ---- Section: Notifications ---- -->
-              <div class="form-section-label">Notifications</div>
-
-              <div class="notify-panel p-3 rounded-3">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                  <span class="fw-semibold shg-body">Enable Alerts</span>
-                  <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
-                </div>
-                <div *ngIf="createForm.get('notifyEnabled')?.value">
-                  <div class="field-group">
-                    <label class="field-label">Target email</label>
-                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                      <input matInput type="email" formControlName="notifyEmail" />
-                    </mat-form-field>
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label">Target mobile</label>
-                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                      <input matInput type="text" formControlName="notifyMobile" />
-                    </mat-form-field>
-                  </div>
-                  <div class="d-flex gap-4 mt-1">
-                    <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
-                    <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
-                  </div>
-                </div>
-              </div>
-
-            </form>
-          </div>
-
-          <mat-divider></mat-divider>
-
-          <!-- Panel Footer -->
-          <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
-            <button mat-stroked-button (click)="closeSidePanel()">Cancel</button>
-            <button mat-flat-button color="primary" type="button" (click)="onCreateConfig()" [disabled]="isSubmitting" class="save-btn">
-              <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
-              <span>{{ isSubmitting ? 'Creating...' : 'Register Configuration' }}</span>
-            </button>
-          </div>
-        </ng-container>
-
-        <!-- ============ EDIT MODE ============ -->
-        <ng-container *ngIf="selectedConfigForUpdate">
-          <div class="side-panel-header d-flex align-items-center justify-content-between px-4 py-3">
-            <div>
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-pencil-fill" style="color:var(--shg-primary); font-size:16px"></i>
-                <h3 class="shg-title m-0">Edit Configuration</h3>
-              </div>
-              <p class="shg-caption m-0 mt-1" style="color:var(--shg-ink-500)">
-                Editing: <code>{{ selectedConfigForUpdate.configPath }}</code>
-              </p>
             </div>
-            <button mat-icon-button (click)="closeSidePanel()" aria-label="Close">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <mat-divider></mat-divider>
+          </form>
+        </div>
 
-          <div class="side-panel-body flex-grow-1 px-4 py-3 overflow-auto">
-            <form [formGroup]="updateForm" (ngSubmit)="onUpdateConfig()" novalidate>
-              <div class="form-section-label">Node Settings</div>
-
-              <div class="field-group">
-                <label class="field-label">Node name</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput formControlName="nodeName" />
-                </mat-form-field>
-              </div>
-
-              <div class="field-group">
-                <label class="field-label">Global SLA timeout (minutes)</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput type="number" formControlName="globalSlaTimeoutMinutes" />
-                </mat-form-field>
-              </div>
-
-              <mat-divider class="my-3"></mat-divider>
-              <div class="form-section-label">Notifications</div>
-
-              <div class="notify-panel p-3 rounded-3 mb-3">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                  <span class="fw-semibold shg-body">Enable Notifications</span>
-                  <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
-                </div>
-                <div *ngIf="updateForm.get('notifyEnabled')?.value">
-                  <div class="field-group">
-                    <label class="field-label">Target email</label>
-                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                      <input matInput type="email" formControlName="notifyEmail" />
-                    </mat-form-field>
-                  </div>
-                  <div class="field-group">
-                    <label class="field-label">Target mobile</label>
-                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                      <input matInput type="text" formControlName="notifyMobile" />
-                    </mat-form-field>
-                  </div>
-                  <div class="d-flex gap-4 mt-1">
-                    <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
-                    <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-
-          <mat-divider></mat-divider>
-          <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
-            <button mat-stroked-button (click)="closeSidePanel()">Cancel</button>
-            <button mat-flat-button color="primary" (click)="onUpdateConfig()" [disabled]="isSubmitting" class="save-btn">
-              <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
-              <span>{{ isSubmitting ? 'Updating...' : 'Update Node' }}</span>
-            </button>
-          </div>
-        </ng-container>
+        <mat-divider></mat-divider>
+        <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
+          <button mat-stroked-button (click)="closeSidePanel()">Cancel</button>
+          <button mat-flat-button color="primary" (click)="onUpdateConfig()" [disabled]="isSubmitting" class="save-btn">
+            <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+            <span>{{ isSubmitting ? 'Updating...' : 'Update Node' }}</span>
+          </button>
+        </div>
 
       </mat-card>
     </div>

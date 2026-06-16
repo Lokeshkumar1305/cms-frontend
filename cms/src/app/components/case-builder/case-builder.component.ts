@@ -17,19 +17,8 @@ export class CaseBuilderComponent implements OnInit {
   configurations: CaseConfiguration[] = [];
 
   updateForm!: FormGroup;
-  createForm!: FormGroup;
 
   selectedConfigForUpdate: CaseConfiguration | null = null;
-  showCreateForm = false;
-
-  nodes: string[] = [];
-  newNodeName = '';
-  nodeWorkflows: {
-    nodeName: string;
-    bpmnFile: string;
-    substageOverrides: { substage: string; bpmnFile: string }[];
-  }[] = [];
-
   isSubmitting = false;
   isLoading = false;
   successMessage = '';
@@ -53,7 +42,7 @@ export class CaseBuilderComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.initForms();
+    this.initForm();
 
     this.tenantContext.activeTenant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tenant => {
       if (tenant) {
@@ -68,28 +57,13 @@ export class CaseBuilderComponent implements OnInit {
         this.totalCount = 0;
       }
       this.selectedConfigForUpdate = null;
-      this.showCreateForm = false;
     });
   }
 
-  initForms(): void {
+  initForm(): void {
     this.updateForm = this.fb.group({
       nodeName:                ['', [Validators.required]],
       globalSlaTimeoutMinutes: [720, [Validators.required, Validators.min(1)]],
-      notifyEnabled:           [false],
-      notifyEmail:             ['', [Validators.email]],
-      notifyMobile:            [''],
-      notifySMSChannel:        [false],
-      notifyEmailChannel:      [true]
-    });
-
-    this.createForm = this.fb.group({
-      configPath:              ['', [Validators.required]],
-      nodeName:                ['', [Validators.required]],
-      currentDepthLevel:       [1,  [Validators.required, Validators.min(1)]],
-      globalSlaTimeoutMinutes: [720, [Validators.required, Validators.min(1)]],
-      fallbackAdminUserId:     ['', [Validators.required]],
-      fallbackAdminGroupId:    ['', [Validators.required]],
       notifyEnabled:           [false],
       notifyEmail:             ['', [Validators.email]],
       notifyMobile:            [''],
@@ -111,23 +85,7 @@ export class CaseBuilderComponent implements OnInit {
     });
   }
 
-  openCreateForm(): void {
-    this.selectedConfigForUpdate = null;
-    this.showCreateForm = true;
-    this.nodes = [];
-    this.newNodeName = '';
-    this.nodeWorkflows = [];
-    this.errorMessage = '';
-    this.createForm.reset({
-      configPath: '', nodeName: '', currentDepthLevel: 1,
-      globalSlaTimeoutMinutes: 720, fallbackAdminUserId: '',
-      fallbackAdminGroupId: '', notifyEnabled: false,
-      notifyEmail: '', notifyMobile: '', notifySMSChannel: false, notifyEmailChannel: true
-    });
-  }
-
   selectConfigForEdit(config: CaseConfiguration): void {
-    this.showCreateForm = false;
     this.selectedConfigForUpdate = config;
     this.updateForm.setValue({
       nodeName:                config.nodeName,
@@ -142,114 +100,6 @@ export class CaseBuilderComponent implements OnInit {
 
   closeSidePanel(): void {
     this.selectedConfigForUpdate = null;
-    this.showCreateForm = false;
-  }
-
-  addNode(): void {
-    const val = this.newNodeName.trim().toUpperCase();
-    if (val && !this.nodes.includes(val) && /^[A-Z0-9_-]+$/.test(val)) {
-      this.nodes.push(val);
-      this.newNodeName = '';
-      this.updateConfigPath();
-    }
-  }
-
-  removeNode(index: number): void {
-    this.nodes.splice(index, 1);
-    this.updateConfigPath();
-  }
-
-  private updateConfigPath(): void {
-    this.createForm.patchValue({ configPath: this.nodes.join('.') });
-    this.syncWorkflows();
-  }
-
-  private syncWorkflows(): void {
-    const updated: typeof this.nodeWorkflows = [];
-    for (const node of this.nodes) {
-      const existing = this.nodeWorkflows.find(w => w.nodeName === node);
-      updated.push(existing ?? { nodeName: node, bpmnFile: '', substageOverrides: [] });
-    }
-    this.nodeWorkflows = updated;
-  }
-
-  addSubstageOverride(wIdx: number): void {
-    this.nodeWorkflows[wIdx].substageOverrides.push({ substage: '', bpmnFile: '' });
-  }
-
-  removeSubstageOverride(wIdx: number, oIdx: number): void {
-    this.nodeWorkflows[wIdx].substageOverrides.splice(oIdx, 1);
-  }
-
-  onCreateConfig(): void {
-    this.errorMessage = '';
-    if (this.createForm.invalid) {
-      this.createForm.markAllAsTouched();
-      return;
-    }
-
-    this.isSubmitting = true;
-    const formVal = this.createForm.value;
-
-    const workflowKeys: { [key: string]: string } = {};
-    for (const item of this.nodeWorkflows) {
-      if (item.nodeName.trim() && item.bpmnFile.trim()) {
-        workflowKeys[item.nodeName.trim()] = item.bpmnFile.trim();
-      }
-      for (const override of item.substageOverrides) {
-        if (override.substage.trim() && override.bpmnFile.trim()) {
-          workflowKeys[override.substage.trim()] = override.bpmnFile.trim();
-        }
-      }
-    }
-
-    const channels: string[] = [];
-    if (formVal.notifySMSChannel)   channels.push('SMS');
-    if (formVal.notifyEmailChannel) channels.push('EMAIL');
-
-    const notificationSettings: NotificationSettings = {
-      enabled:            formVal.notifyEnabled,
-      channels,
-      targetEmailId:      formVal.notifyEmail,
-      targetMobileNumber: formVal.notifyMobile
-    };
-
-    const payload = {
-      configPath:              formVal.configPath,
-      nodeName:                formVal.nodeName,
-      parentConfigurationId:   null,
-      currentDepthLevel:       formVal.currentDepthLevel,
-      globalSlaTimeoutMinutes: formVal.globalSlaTimeoutMinutes,
-      fallbackAdminUserId:     formVal.fallbackAdminUserId,
-      fallbackAdminGroupId:    formVal.fallbackAdminGroupId,
-      workflowKeys,
-      approvalSettings: {
-        totalRequiredLevels: 2,
-        tiers: [
-          { level: 1, tierName: 'Automated Score Validation Check', authorizedGroups: ['EXPRESS_MAKER_GP'],    strictBinding: true },
-          { level: 2, tierName: 'Manager Final Audit Confirmation',  authorizedGroups: ['EXPRESS_CHECKER_GP'], strictBinding: true }
-        ]
-      },
-      notificationSettings
-    };
-
-    this.configService.createCaseConfiguration(this.activeProductId, payload).subscribe({
-      next: (res) => {
-        this.isSubmitting = false;
-        if (res.success) {
-          this.successMessage = 'Configuration registered successfully.';
-          this.showCreateForm = false;
-          this.loadConfigurations();
-        } else {
-          this.errorMessage = res.message || 'Failed to create configuration.';
-        }
-      },
-      error: (err) => {
-        this.isSubmitting = false;
-        this.errorMessage = 'An error occurred during workflow registration.';
-        console.error(err);
-      }
-    });
   }
 
   onUpdateConfig(): void {
