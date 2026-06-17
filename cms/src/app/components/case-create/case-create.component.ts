@@ -99,6 +99,9 @@ export class CaseCreateComponent implements OnInit {
       if (tenant) {
         this.activeProductId = tenant.productId;
         this.activeProductName = tenant.productName;
+        if (!this.createForm.get('productId')?.value) {
+          this.createForm.patchValue({ productId: tenant.productId });
+        }
       } else {
         this.activeProductId = '';
         this.activeProductName = '';
@@ -108,6 +111,8 @@ export class CaseCreateComponent implements OnInit {
 
   initForm(): void {
     this.createForm = this.fb.group({
+      productId:               ['', [Validators.required]],
+      userId:                  ['', [Validators.required]],
       configPath:              ['', [Validators.required]],
       nodeName:                ['', [Validators.required]],
       currentDepthLevel:       [null, [Validators.required, Validators.min(1)]],
@@ -132,6 +137,8 @@ export class CaseCreateComponent implements OnInit {
 
     const notify = config.notificationSettings;
     this.createForm.patchValue({
+      productId:               config.productId || '',
+      userId:                  'system_admin',
       configPath:              config.configPath,
       nodeName:                config.nodeName,
       currentDepthLevel:       config.currentDepthLevel,
@@ -204,7 +211,11 @@ export class CaseCreateComponent implements OnInit {
 
     this.mainUploadStates[wIdx] = true;
     this.mainUploadedStates[wIdx] = false;
-    this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
+    this.configService.deployBpmnFile(
+      this.createForm.get('productId')?.value || this.activeProductId,
+      this.createForm.get('userId')?.value    || 'system_admin',
+      file
+    ).subscribe({
       next: (res) => {
         this.mainUploadStates[wIdx] = false;
         if (res?.status === 'SUCCESS' && res?.resourceName) {
@@ -234,7 +245,11 @@ export class CaseCreateComponent implements OnInit {
 
     this.subUploadStates[idx] = true;
     this.subUploadedStates[idx] = false;
-    this.configService.deployBpmnFile(this.activeProductId, 'system_admin', file).subscribe({
+    this.configService.deployBpmnFile(
+      this.createForm.get('productId')?.value || this.activeProductId,
+      this.createForm.get('userId')?.value    || 'system_admin',
+      file
+    ).subscribe({
       next: (res) => {
         this.subUploadStates[idx] = false;
         if (res?.status === 'SUCCESS' && res?.resourceName) {
@@ -278,6 +293,8 @@ export class CaseCreateComponent implements OnInit {
 
     this.isSubmitting = true;
     const formVal = this.createForm.value;
+    const productId: string = formVal.productId || this.activeProductId;
+    const userId: string    = formVal.userId    || 'system_admin';
 
     const workflowKeys: { [key: string]: string } = {};
     for (const item of this.nodeWorkflows) {
@@ -325,8 +342,8 @@ export class CaseCreateComponent implements OnInit {
     };
 
     const request$ = this.editMode
-      ? this.configService.updateCaseConfiguration(this.editConfigId, payload, this.activeProductId)
-      : this.configService.createCaseConfiguration(this.activeProductId, payload);
+      ? this.configService.updateCaseConfiguration(this.editConfigId, payload, productId, userId)
+      : this.configService.createCaseConfiguration(productId, payload, userId);
 
     request$.subscribe({
       next: (res) => {

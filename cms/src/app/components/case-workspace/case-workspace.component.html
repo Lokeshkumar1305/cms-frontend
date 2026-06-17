@@ -35,49 +35,34 @@
     </div>
   </div>
 
-  <!-- Filter Console -->
+  <!-- Fetch Bar -->
   <mat-card class="p-3 mb-4">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
       <span class="fw-bold shg-body" style="color:var(--shg-ink-500); text-transform:uppercase; font-size:12px; letter-spacing:0.5px;">
-        Workspace Queue Filters
+        Fetch Queue
       </span>
-      <div class="d-flex gap-2">
-        <button mat-flat-button color="primary" (click)="applySearch()" class="gap-1 filter-btn">
-          <i class="bi bi-funnel"></i>
-          <span>Apply Filters</span>
-        </button>
-        <button mat-stroked-button (click)="clearSearch()" class="gap-1 filter-btn">
-          <i class="bi bi-arrow-counterclockwise"></i>
-          <span>Reset</span>
-        </button>
-      </div>
     </div>
-
-    <div class="row g-3">
-      <!-- Status Filter -->
-      <div class="col-12 col-md-4">
-        <label class="field-label">Status</label>
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-5">
+        <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
         <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-          <mat-select [(ngModel)]="searchStatus">
-            <mat-option value="">All Status States</mat-option>
-            <mat-option value="INITIATED">INITIATED</mat-option>
-            <mat-option value="IN_PROGRESS">IN_PROGRESS</mat-option>
-            <mat-option value="COMPLETED">COMPLETED</mat-option>
-            <mat-option value="FAILED">FAILED</mat-option>
-          </mat-select>
+          <input matInput [(ngModel)]="fetchProductId" placeholder="e.g. PRD-47806FBF" (keyup.enter)="fetchData()" />
         </mat-form-field>
       </div>
-
-      <!-- Pathway Filter -->
-      <div class="col-12 col-md-4">
-        <label class="field-label">Filter by pathway</label>
+      <div class="col-12 col-md-5">
+        <label class="field-label">User ID</label>
         <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-          <i class="bi bi-folder-symlink" matPrefix></i>
-          <input matInput [(ngModel)]="searchPath" placeholder="e.g. EXPRESS..." />
+          <input matInput [(ngModel)]="fetchUserId" placeholder="e.g. system_admin" (keyup.enter)="fetchData()" />
         </mat-form-field>
       </div>
-
-
+      <div class="col-12 col-md-2">
+        <label class="field-label" style="visibility:hidden">_</label>
+        <button mat-flat-button color="primary" class="w-100" style="height:56px; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px" (click)="fetchData()" [disabled]="!fetchProductId.trim() || isLoading">
+          <mat-spinner diameter="14" *ngIf="isLoading" class="me-1 spinner-inline"></mat-spinner>
+          <i class="bi bi-search" *ngIf="!isLoading"></i>
+          <span class="ms-1">{{ isLoading ? 'Fetching...' : 'Fetch Data' }}</span>
+        </button>
+      </div>
     </div>
   </mat-card>
 
@@ -159,7 +144,11 @@
                 <mat-spinner diameter="32" class="mx-auto mb-2"></mat-spinner>
                 <span class="shg-caption d-block">Fetching workspace silos...</span>
               </span>
-              <span *ngIf="!isLoading">
+              <span *ngIf="!isLoading && !dataFetched">
+                <i class="bi bi-arrow-up-circle fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+                <span class="shg-caption">Enter a Product ID above and click Fetch Data to load the queue.</span>
+              </span>
+              <span *ngIf="!isLoading && dataFetched">
                 <i class="bi bi-inbox fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
                 <span class="shg-caption">No active cases found in queue.</span>
               </span>
@@ -246,6 +235,30 @@
             <span>{{ ingestError }}</span>
           </div>
 
+          <!-- Product ID / User ID / Group ID -->
+          <div class="row g-2 mb-1">
+            <div class="col-4">
+              <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput [(ngModel)]="ingestProductId" placeholder="e.g. PRD-47806FBF" />
+              </mat-form-field>
+            </div>
+            <div class="col-4">
+              <label class="field-label">User ID <span style="color:#dc2626">*</span></label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput [(ngModel)]="ingestUserId" placeholder="e.g. system_admin" />
+              </mat-form-field>
+            </div>
+            <div class="col-4">
+              <label class="field-label">Group ID</label>
+              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                <input matInput [(ngModel)]="workspaceGroupId" placeholder="e.g. EXPRESS_MAKER_GP" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <mat-divider class="my-3"></mat-divider>
+
           <!-- Config Path -->
           <div class="field-group">
             <label class="field-label">Config path <span style="color:#dc2626">*</span></label>
@@ -296,7 +309,7 @@
         <div class="side-panel-footer d-flex align-items-center justify-content-end gap-2 px-4 py-3">
           <button mat-stroked-button (click)="showIngestForm = false">Cancel</button>
           <button mat-flat-button color="primary" (click)="triggerIngest()"
-            [disabled]="!ingestConfigPath.trim() || isIngesting" class="save-btn">
+            [disabled]="!ingestProductId.trim() || !ingestUserId.trim() || !ingestConfigPath.trim() || isIngesting" class="save-btn">
             <mat-spinner diameter="14" *ngIf="isIngesting" class="me-1"></mat-spinner>
             <span>{{ isIngesting ? 'Creating...' : 'Create Case' }}</span>
           </button>

@@ -17,6 +17,10 @@ export class CaseBuilderComponent implements OnInit {
   activeProductName = '';
   configurations: CaseConfiguration[] = [];
 
+  fetchProductId = '';
+  fetchUserId = '';
+  dataFetched = false;
+
   updateForm!: FormGroup;
 
   selectedConfigForUpdate: CaseConfiguration | null = null;
@@ -50,13 +54,13 @@ export class CaseBuilderComponent implements OnInit {
       if (tenant) {
         this.activeProductId = tenant.productId;
         this.activeProductName = tenant.productName;
-        this.page = 1;
-        this.loadConfigurations();
+        if (!this.fetchProductId) this.fetchProductId = tenant.productId;
       } else {
         this.activeProductId = '';
         this.activeProductName = '';
         this.configurations = [];
         this.totalCount = 0;
+        this.dataFetched = false;
       }
       this.selectedConfigForUpdate = null;
     });
@@ -74,10 +78,17 @@ export class CaseBuilderComponent implements OnInit {
     });
   }
 
+  fetchData(): void {
+    if (!this.fetchProductId.trim()) return;
+    this.page = 1;
+    this.dataFetched = true;
+    this.loadConfigurations();
+  }
+
   loadConfigurations(): void {
-    if (!this.activeProductId) return;
+    if (!this.fetchProductId.trim()) return;
     this.isLoading = true;
-    this.configService.getConfigurationsByProduct(this.activeProductId, this.page, this.size, this.sortField, this.sortOrder).subscribe({
+    this.configService.getConfigurationsByProduct(this.fetchProductId.trim(), this.page, this.size, this.sortField, this.sortOrder, this.fetchUserId.trim() || 'system_admin').subscribe({
       next: (res) => {
         this.isLoading = false;
         this.configurations = res.responseObject || [];

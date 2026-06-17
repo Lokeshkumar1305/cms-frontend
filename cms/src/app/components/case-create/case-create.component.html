@@ -47,6 +47,32 @@
 
     <!-- Form (submit button is in the footer outside this form; Enter key still triggers ngSubmit) -->
     <form [formGroup]="createForm" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- Request Context Card -->
+      <mat-card class="form-section-card p-4 mb-4">
+        <div class="form-section-label">Request Context</div>
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput formControlName="productId" placeholder="e.g. PRD-47806FBF" />
+              <mat-error *ngIf="createForm.get('productId')?.hasError('required')">
+                Product ID is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="field-label">User ID <span style="color:#dc2626">*</span></label>
+            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+              <input matInput formControlName="userId" placeholder="e.g. system_admin" />
+              <mat-error *ngIf="createForm.get('userId')?.hasError('required')">
+                User ID is required
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
       <div class="row g-4">
 
         <!-- Left Column: Path & Workflow -->

@@ -1,6 +1,6 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CaseService, CaseWorkflow, CaseQueuePayload, CaseSearchCriteria } from '../../services/case.service';
+import { CaseService, CaseWorkflow, CaseQueuePayload } from '../../services/case.service';
 import { TenantContextService } from '../../services/tenant-context.service';
 import { Sort } from '@angular/material/sort';
 
@@ -13,6 +13,10 @@ import { Sort } from '@angular/material/sort';
 export class CaseWorkspaceComponent implements OnInit {
   activeProductId = '';
   activeProductName = '';
+
+  fetchProductId = '';
+  fetchUserId = '';
+  dataFetched = false;
 
   displayedColumns = ['caseId', 'configPath', 'currentLevel', 'status', 'actions'];
 
@@ -27,8 +31,7 @@ export class CaseWorkspaceComponent implements OnInit {
   sortOrder: 'ASC' | 'DESC' = 'DESC';
 
   // Search parameters
-  searchStatus = '';
-  searchPath = '';
+  workspaceGroupId = '';
 
   // Selected Detail
   selectedCase: CaseWorkflow | null = null;
@@ -38,6 +41,8 @@ export class CaseWorkspaceComponent implements OnInit {
   showIngestForm = false;
   isIngesting = false;
   ingestError = '';
+  ingestProductId = '';
+  ingestUserId = '';
   ingestConfigPath = '';
   ingestSubstage = '';
   ingestPayloadRows: { key: string; value: string }[] = [];
@@ -57,81 +62,49 @@ export class CaseWorkspaceComponent implements OnInit {
       if (tenant) {
         this.activeProductId = tenant.productId;
         this.activeProductName = tenant.productName;
-        this.resetQueueFilters();
-        this.loadQueue();
+        this.ingestProductId = tenant.productId;
+        if (!this.fetchProductId) this.fetchProductId = tenant.productId;
       } else {
         this.activeProductId = '';
         this.activeProductName = '';
+        this.ingestProductId = '';
         this.casesQueue = [];
         this.totalCount = 0;
+        this.dataFetched = false;
       }
       this.selectedCase = null;
     });
   }
 
-  resetQueueFilters(): void {
+  fetchData(): void {
+    if (!this.fetchProductId.trim()) return;
     this.page = 1;
-    this.searchStatus = '';
-    this.searchPath = '';
+    this.dataFetched = true;
+    this.loadQueue();
   }
 
   loadQueue(): void {
-    if (!this.activeProductId) return;
+    if (!this.fetchProductId.trim()) return;
     this.isLoading = true;
 
-    // Check if search filters are active
-    const hasSearchFilters = this.searchStatus || this.searchPath;
+    const productId = this.fetchProductId.trim();
+    const userId = this.fetchUserId.trim();
 
-    if (hasSearchFilters) {
-      const criteriaList: CaseSearchCriteria[] = [];
-      if (this.searchStatus) {
-        criteriaList.push({ field: 'status', operator: 'EQUALS', value: this.searchStatus });
-      }
-      if (this.searchPath) {
-        criteriaList.push({ field: 'configPath', operator: 'LIKE', value: this.searchPath });
-      }
+    const queuePayload: CaseQueuePayload = {
+      page: this.page,
+      size: this.size,
+      sortField: this.sortField,
+      sortOrder: this.sortOrder
+    };
 
-      const searchPayload = {
-        page: this.page,
-        size: this.size,
-        criteriaList: criteriaList
-      };
-
-      this.caseService.searchCases(this.activeProductId, searchPayload).subscribe({
-        next: (res) => {
-          this.isLoading = false;
-          this.casesQueue = res.responseObject || [];
-          this.totalCount = res.totalCount || 0;
-        },
-        error: () => (this.isLoading = false)
-      });
-    } else {
-      const queuePayload: CaseQueuePayload = {
-        page: this.page,
-        size: this.size,
-        sortField: this.sortField,
-        sortOrder: this.sortOrder
-      };
-
-      this.caseService.getWorkspaceQueue(this.activeProductId, queuePayload).subscribe({
-        next: (res) => {
-          this.isLoading = false;
-          this.casesQueue = res.responseObject || [];
-          this.totalCount = res.totalCount || 0;
-        },
-        error: () => (this.isLoading = false)
-      });
-    }
-  }
-
-  applySearch(): void {
-    this.page = 1;
-    this.loadQueue();
-  }
-
-  clearSearch(): void {
-    this.resetQueueFilters();
-    this.loadQueue();
+    this.caseService.getWorkspaceQueue(productId, queuePayload, this.workspaceGroupId, userId).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.casesQueue = res.responseObject || [];
+        this.totalCount = res.totalCount || 0;
+      },
+      error: () => (this.isLoading = false)
+    });
   }
 
   changeSort(field: string): void {
@@ -194,7 +167,7 @@ export class CaseWorkspaceComponent implements OnInit {
   }
 
   triggerIngest(): void {
-    if (!this.activeProductId || !this.ingestConfigPath.trim()) return;
+    if (!this.ingestProductId.trim() || !this.ingestUserId.trim() || !this.ingestConfigPath.trim()) return;
 
     const transactionPayload: { [key: string]: any } = {};
     for (const row of this.ingestPayloadRows) {
@@ -205,15 +178,18 @@ export class CaseWorkspaceComponent implements OnInit {
     this.ingestError = '';
 
     this.caseService.createCase(
-      this.activeProductId,
-      'system_admin',
+      this.ingestProductId.trim(),
+      this.ingestUserId.trim(),
       this.ingestConfigPath.trim(),
       this.ingestSubstage,
-      Object.keys(transactionPayload).length > 0 ? transactionPayload : undefined
+      Object.keys(transactionPayload).length > 0 ? transactionPayload : undefined,
+      this.workspaceGroupId.trim()
     ).subscribe({
       next: (res) => {
         this.isIngesting = false;
         if (res.success !== false) {
+          this.ingestProductId = this.activeProductId;
+          this.ingestUserId = '';
           this.ingestConfigPath = '';
           this.ingestSubstage = '';
           this.ingestPayloadRows = [];

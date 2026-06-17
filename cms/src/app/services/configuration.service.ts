@@ -99,10 +99,10 @@ export class ConfigurationService {
   }
 
   // Get configuration nodes filtered by product tenant (POST http://192.168.100.61:8091/api/cms/configuration/getall)
-  getConfigurationsByProduct(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC'): Observable<any> {
+  getConfigurationsByProduct(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC', userId = 'system_admin'): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
-      .set('X-User-Id', 'system_admin')
+      .set('X-User-Id', userId)
       .set('X-Product-Id', productId);
 
     const payload = { page, size, sortField, sortOrder };
@@ -146,12 +146,13 @@ export class ConfigurationService {
   }
 
   // Create Case Configuration (POST http://localhost:8091/api/cms/configuration/create)
-  createCaseConfiguration(productId: string, config: Omit<CaseConfiguration, 'id' | 'productId' | 'createdDate' | 'lastModifiedDate' | 'modifiedByUser'>): Observable<any> {
-    const headers = new HttpHeaders({
-      'X-User-Id':    'system_admin',
+  createCaseConfiguration(productId: string, config: Omit<CaseConfiguration, 'id' | 'productId' | 'createdDate' | 'lastModifiedDate' | 'modifiedByUser'>, userId = 'system_admin', groupId = ''): Observable<any> {
+    let headers = new HttpHeaders({
+      'X-User-Id':    userId,
       'X-Product-Id': productId,
       'Content-Type': 'application/json'
     });
+    if (groupId) headers = headers.set('X-Group-Id', groupId);
 
     const payload = {
       requestObject: config
@@ -203,12 +204,13 @@ export class ConfigurationService {
   }
 
   // Update Case Configuration (POST /api/cms/configuration/update)
-  updateCaseConfiguration(configId: string, updateData: { [key: string]: any }, productId?: string): Observable<any> {
-    const headers = new HttpHeaders({
-      'X-User-Id':    'system_admin',
+  updateCaseConfiguration(configId: string, updateData: { [key: string]: any }, productId?: string, userId = 'system_admin', groupId = ''): Observable<any> {
+    let headers = new HttpHeaders({
+      'X-User-Id':    userId,
       'X-Product-Id': productId || '',
       'Content-Type': 'application/json'
     });
+    if (groupId) headers = headers.set('X-Group-Id', groupId);
 
     const payload = {
       keyValue: configId,

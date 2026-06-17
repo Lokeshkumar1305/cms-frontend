@@ -21,7 +21,7 @@ export class SidenavComponent {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'bi-columns-gap', route: 'dashboard' },
-    { label: 'Product Configuration', icon: 'bi-gear', route: 'product-config' },
+    { label: 'Product Config', icon: 'bi-hdd-network', route: 'product-config' },
     { label: 'Case Configuration', icon: 'bi-sliders', route: 'case-config' },
     { label: 'Case Workspace', icon: 'bi-briefcase', route: 'cases' }
   ];

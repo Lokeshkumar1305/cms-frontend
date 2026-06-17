@@ -43,6 +43,36 @@
     </button>
   </div>
 
+  <!-- Fetch Bar -->
+  <mat-card class="p-3 mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <span class="fw-bold shg-body" style="color:var(--shg-ink-500); text-transform:uppercase; font-size:12px; letter-spacing:0.5px;">
+        Fetch Configurations
+      </span>
+    </div>
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-5">
+        <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput [(ngModel)]="fetchProductId" placeholder="e.g. PRD-47806FBF" (keyup.enter)="fetchData()" />
+        </mat-form-field>
+      </div>
+      <div class="col-12 col-md-5">
+        <label class="field-label">User ID</label>
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <input matInput [(ngModel)]="fetchUserId" placeholder="e.g. system_admin" (keyup.enter)="fetchData()" />
+        </mat-form-field>
+      </div>
+      <div class="col-12 col-md-2">
+        <button mat-flat-button color="primary" class="w-100 filter-btn" (click)="fetchData()" [disabled]="!fetchProductId.trim() || isLoading">
+          <mat-spinner diameter="14" *ngIf="isLoading" class="me-1 spinner-inline"></mat-spinner>
+          <i class="bi bi-search" *ngIf="!isLoading"></i>
+          <span class="ms-1">{{ isLoading ? 'Fetching...' : 'Fetch Data' }}</span>
+        </button>
+      </div>
+    </div>
+  </mat-card>
+
   <!-- Main Content: Table + Side Panel -->
   <div class="row g-4">
 
@@ -140,7 +170,11 @@
                 <mat-spinner diameter="32" class="mx-auto mb-2"></mat-spinner>
                 <span class="shg-caption d-block">Loading configurations...</span>
               </span>
-              <span *ngIf="!isLoading">
+              <span *ngIf="!isLoading && !dataFetched">
+                <i class="bi bi-arrow-up-circle fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
+                <span class="shg-caption">Enter a Product ID above and click Fetch Data to load configurations.</span>
+              </span>
+              <span *ngIf="!isLoading && dataFetched">
                 <i class="bi bi-sliders fs-2 d-block mb-2" style="color:var(--shg-ink-200)"></i>
                 <span class="shg-caption">No configurations registered for this product.</span>
               </span>

@@ -203,11 +203,12 @@ export class CaseService {
   }
 
   // Fetch Dynamic Workspace Queue (POST http://192.168.100.61:8091/api/cms/cases/getall)
-  getWorkspaceQueue(productId: string, payload: CaseQueuePayload): Observable<any> {
+  getWorkspaceQueue(productId: string, payload: CaseQueuePayload, groupId = '', userId = ''): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
-      .set('X-User-Id', 'retail_agent_01')
-      .set('X-Product-Id', productId);
+      .set('X-User-Id', userId || 'system_admin')
+      .set('X-Product-Id', productId)
+      .set('X-Group-IDs', groupId);
 
     return this.http.post<any>(`${this.apiUrl}/getall`, { ...payload }, { headers }).pipe(
       catchError(err => {
@@ -243,11 +244,12 @@ export class CaseService {
   }
 
   // Search Active Workspace Silos (POST http://192.168.100.61:8091/api/cms/cases/search)
-  searchCases(productId: string, payload: CaseSearchPayload): Observable<any> {
+  searchCases(productId: string, payload: CaseSearchPayload, groupId = '', userId = ''): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
-      .set('X-User-Id', 'system_admin')
-      .set('X-Product-Id', productId);
+      .set('X-User-Id', userId || 'system_admin')
+      .set('X-Product-Id', productId)
+      .set('X-Group-IDs', groupId);
 
     return this.http.post<any>(`${this.apiUrl}/search`, { ...payload }, { headers }).pipe(
       catchError(err => {
@@ -327,10 +329,11 @@ export class CaseService {
   }
 
   // Create case workflow (POST /api/cms/cases/create)
-  createCase(productId: string, userId: string, configPath: string, substage?: string, transactionPayload?: { [key: string]: any }): Observable<any> {
+  createCase(productId: string, userId: string, configPath: string, substage?: string, transactionPayload?: { [key: string]: any }, groupId = ''): Observable<any> {
     const headers = new HttpHeaders({
       'X-User-Id':    userId,
       'X-Product-Id': productId,
+      'X-Group-IDs':  groupId,
       'Content-Type': 'application/json'
     });
 
