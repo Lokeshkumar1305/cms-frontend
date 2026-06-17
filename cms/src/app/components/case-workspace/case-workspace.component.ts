@@ -37,6 +37,15 @@ export class CaseWorkspaceComponent implements OnInit {
   selectedCase: CaseWorkflow | null = null;
   isLoading = false;
 
+  // Action Form fields
+  showActionForm = false;
+  actionCase: CaseWorkflow | null = null;
+  actionType = 'APPROVE';
+  actionNotes = '';
+  isActioning = false;
+  actionError = '';
+  actionSuccess = '';
+
   // Ingestion Form fields
   showIngestForm = false;
   isIngesting = false;
@@ -77,14 +86,14 @@ export class CaseWorkspaceComponent implements OnInit {
   }
 
   fetchData(): void {
-    if (!this.fetchProductId.trim()) return;
+    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
     this.page = 1;
     this.dataFetched = true;
     this.loadQueue();
   }
 
   loadQueue(): void {
-    if (!this.fetchProductId.trim()) return;
+    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
     this.isLoading = true;
 
     const productId = this.fetchProductId.trim();
@@ -158,12 +167,61 @@ export class CaseWorkspaceComponent implements OnInit {
 
   openIngestForm(): void {
     this.selectedCase = null;
+    this.showActionForm = false;
+    this.actionCase = null;
     this.showIngestForm = !this.showIngestForm;
   }
 
   viewDetails(item: CaseWorkflow): void {
     this.showIngestForm = false;
+    this.showActionForm = false;
+    this.actionCase = null;
     this.selectedCase = item;
+  }
+
+  openActionForm(item: CaseWorkflow): void {
+    this.showIngestForm = false;
+    this.selectedCase = null;
+    this.actionCase = item;
+    this.showActionForm = true;
+    this.actionType = 'APPROVE';
+    this.actionNotes = '';
+    this.actionError = '';
+    this.actionSuccess = '';
+  }
+
+  submitAction(): void {
+    if (!this.actionCase || !this.actionNotes.trim()) return;
+    this.isActioning = true;
+    this.actionError = '';
+    this.actionSuccess = '';
+
+    this.caseService.performCaseAction(
+      this.fetchProductId.trim(),
+      this.fetchUserId.trim(),
+      this.workspaceGroupId.trim(),
+      this.actionCase.caseId,
+      this.actionType,
+      this.actionNotes.trim()
+    ).subscribe({
+      next: (res) => {
+        this.isActioning = false;
+        if (res.success !== false) {
+          this.actionSuccess = res.message || 'Action submitted successfully.';
+          setTimeout(() => {
+            this.showActionForm = false;
+            this.actionCase = null;
+            this.loadQueue();
+          }, 1500);
+        } else {
+          this.actionError = res.message || 'Failed to submit action.';
+        }
+      },
+      error: () => {
+        this.isActioning = false;
+        this.actionError = 'An error occurred while submitting the action.';
+      }
+    });
   }
 
   triggerIngest(): void {

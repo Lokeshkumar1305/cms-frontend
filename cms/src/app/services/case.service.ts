@@ -351,6 +351,34 @@ export class CaseService {
     );
   }
 
+  // Perform case action (POST /api/cms/cases/action)
+  performCaseAction(productId: string, userId: string, groupId: string, caseId: string, action: string, operatorNotes: string): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-Product-Id': productId,
+      'X-User-Id':    userId,
+      'X-Group-IDs':  groupId,
+      'Content-Type': 'application/json'
+    });
+
+    const body = { keyValue: caseId, requestObject: { action, operatorNotes } };
+
+    return this.http.post<any>(`${this.apiUrl}/action`, body, { headers }).pipe(
+      catchError(err => {
+        console.warn('Case action API failed, using mock fallback:', err);
+        const idx = this.mockCases.findIndex(c => c.caseId === caseId);
+        if (idx !== -1) {
+          this.mockCases[idx] = {
+            ...this.mockCases[idx],
+            status: action === 'APPROVE' ? 'COMPLETED' : 'FAILED',
+            lastModifiedDate: new Date().toISOString()
+          };
+          this.saveToCache();
+        }
+        return of({ success: true, message: `Case ${action.toLowerCase()}d successfully (Mock Fallback)` });
+      })
+    );
+  }
+
   // Add dummy case trigger (facilitates UI validation check)
   addNewMockCase(productId: string, configPath: string, applicantName: string, capital: number, score: number): void {
     const randomHex = Math.random().toString(16).substring(2, 14).toUpperCase();

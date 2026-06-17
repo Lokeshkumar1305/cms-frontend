@@ -79,16 +79,16 @@ export class CaseBuilderComponent implements OnInit {
   }
 
   fetchData(): void {
-    if (!this.fetchProductId.trim()) return;
+    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
     this.page = 1;
     this.dataFetched = true;
     this.loadConfigurations();
   }
 
   loadConfigurations(): void {
-    if (!this.fetchProductId.trim()) return;
+    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
     this.isLoading = true;
-    this.configService.getConfigurationsByProduct(this.fetchProductId.trim(), this.page, this.size, this.sortField, this.sortOrder, this.fetchUserId.trim() || 'system_admin').subscribe({
+    this.configService.getConfigurationsByProduct(this.fetchProductId.trim(), this.page, this.size, this.sortField, this.sortOrder, this.fetchUserId.trim()).subscribe({
       next: (res) => {
         this.isLoading = false;
         this.configurations = res.responseObject || [];

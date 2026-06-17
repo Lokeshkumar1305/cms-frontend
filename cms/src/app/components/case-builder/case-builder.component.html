@@ -50,7 +50,7 @@
         Fetch Configurations
       </span>
     </div>
-    <div class="row g-3 align-items-end">
+    <div class="row g-3">
       <div class="col-12 col-md-5">
         <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
         <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
@@ -63,8 +63,11 @@
           <input matInput [(ngModel)]="fetchUserId" placeholder="e.g. system_admin" (keyup.enter)="fetchData()" />
         </mat-form-field>
       </div>
-      <div class="col-12 col-md-2">
-        <button mat-flat-button color="primary" class="w-100 filter-btn" (click)="fetchData()" [disabled]="!fetchProductId.trim() || isLoading">
+      <div class="col-12 col-md-2 d-flex flex-column">
+        <label class="field-label" style="visibility:hidden">_</label>
+        <button mat-flat-button color="primary" class="w-100"
+          style="flex:1; --mdc-filled-button-container-height:100%; font-size:13px; font-weight:600;"
+          (click)="fetchData()" [disabled]="!fetchProductId.trim() || !fetchUserId.trim() || isLoading">
           <mat-spinner diameter="14" *ngIf="isLoading" class="me-1 spinner-inline"></mat-spinner>
           <i class="bi bi-search" *ngIf="!isLoading"></i>
           <span class="ms-1">{{ isLoading ? 'Fetching...' : 'Fetch Data' }}</span>
