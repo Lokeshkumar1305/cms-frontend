@@ -18,7 +18,7 @@ export class CaseWorkspaceComponent implements OnInit {
   fetchUserId = '';
   dataFetched = false;
 
-  displayedColumns = ['caseId', 'configPath', 'currentLevel', 'status', 'actions'];
+  displayedColumns = ['caseId', 'configPath', 'currentLevel', 'status', 'createdDate', 'lastModifiedDate', 'actions'];
 
   // Data Queue
   casesQueue: CaseWorkflow[] = [];
@@ -36,6 +36,15 @@ export class CaseWorkspaceComponent implements OnInit {
   // Selected Detail
   selectedCase: CaseWorkflow | null = null;
   isLoading = false;
+
+  // Assign Form fields
+  showAssignForm = false;
+  assignCase: CaseWorkflow | null = null;
+  assignToUserId = '';
+  assignGroupId = '';
+  isAssigning = false;
+  assignError = '';
+  assignSuccess = '';
 
   // Action Form fields
   showActionForm = false;
@@ -169,6 +178,8 @@ export class CaseWorkspaceComponent implements OnInit {
     this.selectedCase = null;
     this.showActionForm = false;
     this.actionCase = null;
+    this.showAssignForm = false;
+    this.assignCase = null;
     this.showIngestForm = !this.showIngestForm;
   }
 
@@ -176,18 +187,68 @@ export class CaseWorkspaceComponent implements OnInit {
     this.showIngestForm = false;
     this.showActionForm = false;
     this.actionCase = null;
+    this.showAssignForm = false;
+    this.assignCase = null;
     this.selectedCase = item;
   }
 
   openActionForm(item: CaseWorkflow): void {
     this.showIngestForm = false;
     this.selectedCase = null;
+    this.showAssignForm = false;
+    this.assignCase = null;
     this.actionCase = item;
     this.showActionForm = true;
     this.actionType = 'APPROVE';
     this.actionNotes = '';
     this.actionError = '';
     this.actionSuccess = '';
+  }
+
+  openAssignForm(item: CaseWorkflow): void {
+    this.showIngestForm = false;
+    this.selectedCase = null;
+    this.showActionForm = false;
+    this.actionCase = null;
+    this.assignCase = item;
+    this.showAssignForm = true;
+    this.assignToUserId = item.createdByUser || '';
+    this.assignGroupId = '';
+    this.assignError = '';
+    this.assignSuccess = '';
+  }
+
+  submitAssign(): void {
+    if (!this.assignCase || !this.assignToUserId.trim()) return;
+    this.isAssigning = true;
+    this.assignError = '';
+    this.assignSuccess = '';
+
+    this.caseService.reassignCase(
+      this.fetchProductId.trim(),
+      this.fetchUserId.trim(),
+      (this.assignGroupId.trim() || this.workspaceGroupId.trim()),
+      this.assignCase.caseId,
+      this.assignToUserId.trim()
+    ).subscribe({
+      next: (res) => {
+        this.isAssigning = false;
+        if (res.success !== false) {
+          this.assignSuccess = res.message || 'Case reassigned successfully.';
+          setTimeout(() => {
+            this.showAssignForm = false;
+            this.assignCase = null;
+            this.loadQueue();
+          }, 1500);
+        } else {
+          this.assignError = res.message || 'Failed to reassign case.';
+        }
+      },
+      error: () => {
+        this.isAssigning = false;
+        this.assignError = 'An error occurred while reassigning the case.';
+      }
+    });
   }
 
   submitAction(): void {

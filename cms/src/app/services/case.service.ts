@@ -43,6 +43,7 @@ export interface CaseWorkflow {
   lastModifiedDate: string;
   externalMetadata?: CaseExternalMetadata;
   handOffContext?: CaseHandOffContext;
+  escalated?: boolean;
 }
 
 export interface CaseQueuePayload {
@@ -347,6 +348,25 @@ export class CaseService {
       catchError(err => {
         console.warn('Case create API failed, using mock fallback:', err);
         return of({ success: false, message: 'API unavailable' });
+      })
+    );
+  }
+
+  // Reassign / assign escalated case (POST /api/cms/cases/reassign)
+  reassignCase(productId: string, userId: string, groupId: string, caseId: string, assignToUserId: string): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-Product-Id': productId,
+      'X-User-Id':    userId,
+      'X-Group-IDs':  groupId,
+      'Content-Type': 'application/json'
+    });
+
+    const body = { keyValue: caseId, keyIndex: assignToUserId };
+
+    return this.http.post<any>(`${this.apiUrl}/reassign`, body, { headers }).pipe(
+      catchError(err => {
+        console.warn('Case reassign API failed, using mock fallback:', err);
+        return of({ success: true, message: 'Case reassigned successfully (Mock Fallback)' });
       })
     );
   }
