@@ -56,7 +56,11 @@ export class CaseCreateComponent implements OnInit {
       case 1: return ['productId', 'userId'].every(c => this.createForm.get(c)?.valid);
       case 2: return ['nodeName', 'globalSlaTimeoutMinutes'].every(c => this.createForm.get(c)?.valid);
       case 3: return ['hardEscalationMode', 'fallbackAdminUserId'].every(c => this.createForm.get(c)?.valid);
-      case 4: return this.visitedSteps.has(4);
+      case 4: {
+        const f = this.createForm;
+        if (!f.get('notifyEnabled')?.value) return false;
+        return !!(f.get('notifySMSChannel')?.value || f.get('notifyEmailChannel')?.value || f.get('notifyWhatsAppChannel')?.value);
+      }
       case 5: return this.approvalTiers.length > 0 && this.approvalTiers.every(t => t.tierName.trim().length > 0);
       default: return false;
     }
