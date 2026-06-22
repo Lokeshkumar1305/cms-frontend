@@ -45,355 +45,564 @@
         style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
     </div>
 
-    <!-- Form (submit button is in the footer outside this form; Enter key still triggers ngSubmit) -->
+    <!-- Form -->
     <form [formGroup]="createForm" (ngSubmit)="onSubmit()" novalidate>
-
-      <!-- Request Context Card -->
-      <mat-card class="form-section-card p-4 mb-4">
-        <div class="form-section-label">Request Context</div>
-        <div class="row g-3">
-          <div class="col-12 col-md-6">
-            <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
-            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput formControlName="productId" placeholder="e.g. PRD-47806FBF" />
-              <mat-error *ngIf="createForm.get('productId')?.hasError('required')">
-                Product ID is required
-              </mat-error>
-            </mat-form-field>
+      <div class="stepper-layout d-flex gap-4">
+        
+        <!-- Left Side Stepper Navigation -->
+        <div class="stepper-sidebar flex-shrink-0">
+          
+          <!-- Step 1 Tab -->
+          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
+            [class.active]="activeStep === 1"
+            (click)="goToStep(1)">
+            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">1</div>
+            <div class="step-details">
+              <div class="step-title fw-bold">Request Context</div>
+              <div class="step-caption text-muted mt-1">Product & User ID</div>
+            </div>
           </div>
-          <div class="col-12 col-md-6">
-            <label class="field-label">User ID <span style="color:#dc2626">*</span></label>
-            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <input matInput formControlName="userId" placeholder="e.g. system_admin" />
-              <mat-error *ngIf="createForm.get('userId')?.hasError('required')">
-                User ID is required
-              </mat-error>
-            </mat-form-field>
+          
+          <!-- Line separator -->
+          <div class="stepper-line"></div>
+          
+          <!-- Step 2 Tab -->
+          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
+            [class.active]="activeStep === 2"
+            (click)="goToStep(2)">
+            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">2</div>
+            <div class="step-details">
+              <div class="step-title fw-bold">Path & Workflow</div>
+              <div class="step-caption text-muted mt-1">Nodes, BPMN & SLA</div>
+            </div>
+          </div>
+
+          <!-- Line separator -->
+          <div class="stepper-line"></div>
+
+          <!-- Step 3 Tab -->
+          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
+            [class.active]="activeStep === 3"
+            (click)="goToStep(3)">
+            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">3</div>
+            <div class="step-details">
+              <div class="step-title fw-bold">Escalation & Fallbacks</div>
+              <div class="step-caption text-muted mt-1">Strategy & admin options</div>
+            </div>
+          </div>
+
+          <!-- Line separator -->
+          <div class="stepper-line"></div>
+
+          <!-- Step 4 Tab -->
+          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
+            [class.active]="activeStep === 4"
+            (click)="goToStep(4)">
+            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">4</div>
+            <div class="step-details">
+              <div class="step-title fw-bold">Notifications</div>
+              <div class="step-caption text-muted mt-1">Alert channels setup</div>
+            </div>
+          </div>
+
+          <!-- Line separator -->
+          <div class="stepper-line"></div>
+
+          <!-- Step 5 Tab -->
+          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
+            [class.active]="activeStep === 5"
+            (click)="goToStep(5)">
+            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">5</div>
+            <div class="step-details">
+              <div class="step-title fw-bold">Approval Settings</div>
+              <div class="step-caption text-muted mt-1">Required tiers & users</div>
+            </div>
           </div>
         </div>
-      </mat-card>
 
-      <div class="row g-4">
+        <!-- Right Side Active Step Content -->
+        <div class="stepper-content flex-grow-1">
 
-        <!-- Left Column: Path & Workflow -->
-        <div class="col-12 col-lg-6">
-          <mat-card class="form-section-card p-4">
-
-            <div class="form-section-label">Path & Workflow</div>
-
-            <label class="field-label">Case type</label>
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                <input matInput placeholder="Add node, e.g. LOAN"
-                  [(ngModel)]="newNodeName"
-                  [ngModelOptions]="{standalone: true}"
-                  (keyup.enter)="addNode()" />
-              </mat-form-field>
-              <button mat-flat-button color="primary" type="button" class="add-node-btn" (click)="addNode()">
-                + Add
-              </button>
-            </div>
-
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2" *ngIf="nodes.length > 0">
-              <ng-container *ngFor="let node of nodes; let i = index; let last = last">
-                <span class="path-node-tag d-flex align-items-center gap-1 px-2 py-1 rounded border">
-                  <span class="fw-semibold text-uppercase" style="font-size:11px">{{ node }}</span>
-                  <i class="bi bi-x cursor-pointer text-muted" (click)="removeNode(i)" style="font-size:14px; line-height:1"></i>
-                </span>
-                <span *ngIf="!last" class="text-muted"><i class="bi bi-chevron-right" style="font-size:9px"></i></span>
-              </ng-container>
-            </div>
-
-            <div class="compiled-path-box p-2 rounded mb-4" *ngIf="nodes.length > 0" style="font-size:12px">
-              {{ nodes.join('.') }}
-            </div>
-
-            <mat-divider class="mb-4"></mat-divider>
-            <div class="form-section-label">Workflow keys → BPMN file</div>
-
-            <div class="d-flex flex-column mb-2">
-
-              <!-- Main case type rows (one per node, fixed name) -->
-              <ng-container *ngFor="let item of nodeWorkflows; let wIdx = index; let lastMain = last">
-                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white">
-                  <span class="path-node-badge px-2 py-1 rounded border fw-semibold text-uppercase"
-                    style="font-size:10px; flex-shrink:0">{{ item.nodeName }}</span>
-                  <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
-                  <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file-name"
-                    [(ngModel)]="item.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                  <!-- Uploading -->
-                  <span *ngIf="mainUploadStates[wIdx]" class="upload-bpmn-btn uploading mb-0">
-                    <mat-spinner diameter="12"></mat-spinner>
-                    <span>Uploading...</span>
-                  </span>
-                  <!-- Uploaded -->
-                  <ng-container *ngIf="!mainUploadStates[wIdx] && mainUploadedStates[wIdx]">
-                    <span class="file-uploaded-chip">
-                      <i class="bi bi-check-circle-fill"></i> Uploaded
-                    </span>
-                    <label [attr.for]="'bpmn-reup-main-' + wIdx" class="upload-bpmn-btn mb-0" title="Re-upload">
-                      <i class="bi bi-arrow-repeat"></i>
-                      <span>Re-upload</span>
-                      <input [id]="'bpmn-reup-main-' + wIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                        (change)="onBpmnFileSelect($event, wIdx)" />
-                    </label>
-                    <button type="button" class="remove-file-btn" (click)="clearMainUpload(wIdx)" title="Remove file">
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </ng-container>
-                  <!-- Default -->
-                  <label *ngIf="!mainUploadStates[wIdx] && !mainUploadedStates[wIdx]"
-                    [attr.for]="'bpmn-main-' + wIdx" class="upload-bpmn-btn mb-0">
-                    <i class="bi bi-upload"></i>
-                    <span>Upload</span>
-                    <input [id]="'bpmn-main-' + wIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                      (change)="onBpmnFileSelect($event, wIdx)" />
-                  </label>
-                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                    style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
-                    (click)="removeNode(wIdx)">Remove</button>
+          <!-- Step 1 Content -->
+          <div class="step-panel animate-fade" *ngIf="activeStep === 1">
+            <mat-card class="form-section-card p-4">
+              <div class="form-section-label">Request Context</div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="field-label">Product ID <span style="color:#dc2626">*</span></label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput formControlName="productId" placeholder="e.g. PRD-47806FBF" />
+                    <mat-error *ngIf="createForm.get('productId')?.hasError('required')">
+                      Product ID is required
+                    </mat-error>
+                  </mat-form-field>
                 </div>
-                <!-- Workflow connector between main rows -->
-                <div *ngIf="!lastMain || substageEntries.length > 0" class="workflow-connector">
-                  <div class="connector-line"></div>
-                  <i class="bi bi-chevron-down connector-arrow"></i>
+                <div class="col-12 col-md-6">
+                  <label class="field-label">User ID <span style="color:#dc2626">*</span></label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput formControlName="userId" placeholder="e.g. system_admin" />
+                    <mat-error *ngIf="createForm.get('userId')?.hasError('required')">
+                      User ID is required
+                    </mat-error>
+                  </mat-form-field>
                 </div>
-              </ng-container>
-
-              <!-- Substage rows (same structure, editable name) -->
-              <ng-container *ngFor="let sub of substageEntries; let sIdx = index; let lastSub = last">
-                <div class="d-flex align-items-center gap-2 p-2 rounded-3 border bg-white">
-                  <input type="text" class="form-control form-control-sm" style="width:90px; flex-shrink:0"
-                    placeholder="substage" [(ngModel)]="sub.name" [ngModelOptions]="{standalone: true}" />
-                  <span class="locked-badge rounded border fw-bold text-uppercase" style="flex-shrink:0">LOCKED</span>
-                  <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="bpmn-file (optional)"
-                    [(ngModel)]="sub.bpmnFile" [ngModelOptions]="{standalone: true}" />
-                  <!-- Uploading -->
-                  <span *ngIf="subUploadStates[sIdx]" class="upload-bpmn-btn uploading mb-0">
-                    <mat-spinner diameter="12"></mat-spinner>
-                    <span>Uploading...</span>
-                  </span>
-                  <!-- Uploaded -->
-                  <ng-container *ngIf="!subUploadStates[sIdx] && subUploadedStates[sIdx]">
-                    <span class="file-uploaded-chip">
-                      <i class="bi bi-check-circle-fill"></i> Uploaded
-                    </span>
-                    <label [attr.for]="'bpmn-reup-sub-' + sIdx" class="upload-bpmn-btn mb-0" title="Re-upload">
-                      <i class="bi bi-arrow-repeat"></i>
-                      <span>Re-upload</span>
-                      <input [id]="'bpmn-reup-sub-' + sIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                        (change)="onSubstageBpmnUpload($event, sIdx)" />
-                    </label>
-                    <button type="button" class="remove-file-btn" (click)="clearSubUpload(sIdx)" title="Remove file">
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </ng-container>
-                  <!-- Default -->
-                  <label *ngIf="!subUploadStates[sIdx] && !subUploadedStates[sIdx]"
-                    [attr.for]="'bpmn-sub-' + sIdx" class="upload-bpmn-btn mb-0">
-                    <i class="bi bi-upload"></i>
-                    <span>Upload</span>
-                    <input [id]="'bpmn-sub-' + sIdx" type="file" accept=".bpmn,.xml" style="display:none"
-                      (change)="onSubstageBpmnUpload($event, sIdx)" />
-                  </label>
-                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                    style="font-size:13px; text-decoration:none; white-space:nowrap; flex-shrink:0"
-                    (click)="removeSubstage(sIdx)">Remove</button>
-                </div>
-                <!-- Connector between substage rows (not after the last) -->
-                <div *ngIf="!lastSub" class="workflow-connector">
-                  <div class="connector-line"></div>
-                  <i class="bi bi-chevron-down connector-arrow"></i>
-                </div>
-              </ng-container>
-
-            </div>
-
-            <!-- Add Substage button — shown once at bottom of section -->
-            <div class="d-flex justify-content-end" *ngIf="nodeWorkflows.length > 1">
-              <button type="button" mat-stroked-button class="add-substage-btn" (click)="addSubstage()">
-                + Add Substage
-              </button>
-            </div>
-
-          </mat-card>
-        </div>
-
-        <!-- Right Column: Node Settings + Notifications -->
-        <div class="col-12 col-lg-6">
-
-          <mat-card class="form-section-card p-4 mb-4">
-            <div class="form-section-label">Node Settings</div>
-
-            <div class="field-group">
-              <label class="field-label">Node title</label>
-              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                <input matInput formControlName="nodeName" />
-              </mat-form-field>
-            </div>
-
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="field-label">Depth level</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput type="number" formControlName="currentDepthLevel" placeholder="e.g. 3" />
-                </mat-form-field>
               </div>
-              <div class="col-6">
-                <label class="field-label">SLA (minutes)</label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <input matInput type="number" formControlName="globalSlaTimeoutMinutes" placeholder="e.g. 1440" />
-                </mat-form-field>
+            </mat-card>
+          </div>
+
+          <!-- Step 2 Content -->
+          <div class="step-panel animate-fade" *ngIf="activeStep === 2">
+            <mat-card class="form-section-card p-4">
+              <div class="form-section-label">Path & Workflow</div>
+
+              <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                  <label class="field-label">Configuration Path <span style="color:#dc2626">*</span></label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput formControlName="configPath" placeholder="e.g. LOAN" />
+                    <mat-error *ngIf="createForm.get('configPath')?.hasError('required')">
+                      Configuration Path is required
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="field-label">Root Node Title <span style="color:#dc2626">*</span></label>
+                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                    <input matInput formControlName="nodeName" placeholder="e.g. LOAN_ROOT" />
+                    <mat-error *ngIf="createForm.get('nodeName')?.hasError('required')">
+                      Node title is required
+                    </mat-error>
+                  </mat-form-field>
+                </div>
               </div>
-            </div>
 
-            <div class="field-group">
-              <label class="field-label">Fallback admin user</label>
-              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                <input matInput formControlName="fallbackAdminUserId" />
-              </mat-form-field>
-            </div>
+              <div class="field-group mb-4">
+                <label class="field-label">Root Workflow Key</label>
 
-            <div class="field-group mb-0">
-              <label class="field-label">Fallback admin group</label>
-              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                <input matInput formControlName="fallbackAdminGroupId" />
-              </mat-form-field>
-            </div>
-          </mat-card>
+                <!-- Uploaded state -->
+                <div *ngIf="rootBpmnFileName && rootBpmnFileName !== 'Uploading...'"
+                  class="d-flex align-items-center gap-2 p-2 rounded-2 border"
+                  style="background:rgba(22,163,74,0.06); border-color:rgba(22,163,74,0.3) !important;">
+                  <i class="bi bi-file-earmark-check-fill" style="color:#16a34a; font-size:16px; flex-shrink:0"></i>
+                  <span class="shg-mono fw-semibold flex-grow-1" style="font-size:12px; color:var(--shg-ink-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ rootBpmnFileName }}</span>
+                  <label for="root-bpmn-reupload" class="mb-0 cursor-pointer d-flex align-items-center gap-1 px-2 py-1 rounded border"
+                    style="font-size:11px; font-weight:600; color:var(--shg-primary); border-color:var(--shg-primary) !important; white-space:nowrap; cursor:pointer;">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>Re-upload</span>
+                    <input id="root-bpmn-reupload" type="file" accept=".bpmn,.xml" style="display:none" (change)="onRootBpmnSelect($event)" />
+                  </label>
+                  <button type="button" class="d-flex align-items-center gap-1 px-2 py-1 rounded border mb-0"
+                    style="font-size:11px; font-weight:600; color:#dc2626; border-color:rgba(220,38,38,0.4) !important; background:transparent; cursor:pointer;"
+                    (click)="clearRootBpmn()">
+                    <i class="bi bi-trash3"></i>
+                    <span>Delete</span>
+                  </button>
+                </div>
 
-          <mat-card class="form-section-card p-4 mb-4">
-            <div class="form-section-label">Notifications</div>
+                <!-- Uploading state -->
+                <div *ngIf="rootBpmnUploading"
+                  class="d-flex align-items-center gap-2 p-2 rounded-2 border"
+                  style="background:rgba(37,99,235,0.06); border-color:rgba(37,99,235,0.3) !important;">
+                  <mat-spinner diameter="14"></mat-spinner>
+                  <span class="shg-caption" style="color:var(--shg-ink-500)">Uploading BPMN file...</span>
+                </div>
 
-            <div class="notify-panel p-3 rounded-3">
+                <!-- No file state -->
+                <div *ngIf="!rootBpmnFileName" class="d-flex align-items-center gap-2">
+                  <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                    <input matInput formControlName="workflowKey" placeholder="e.g. universal-case-flow" />
+                  </mat-form-field>
+                  <label for="root-bpmn-upload" class="upload-bpmn-btn mb-0 p-2 border rounded cursor-pointer text-center bg-light"
+                    style="font-size:12px; height:38px; display:flex; align-items:center; gap:4px; border-color:var(--shg-ink-200) !important; white-space:nowrap;">
+                    <i class="bi bi-upload"></i>
+                    <span style="font-weight:500;">Upload BPMN</span>
+                    <input id="root-bpmn-upload" type="file" accept=".bpmn,.xml" style="display:none" (change)="onRootBpmnSelect($event)" />
+                  </label>
+                </div>
+              </div>
+
+              <mat-divider class="mb-4"></mat-divider>
+
+              <!-- Tree Nodes Hierarchy — redesigned -->
               <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="fw-semibold shg-body">Enable Alerts</span>
-                <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
+                <div>
+                  <div class="form-section-label mb-1">Node Tree Hierarchy</div>
+                  <p class="shg-caption m-0" style="color:var(--shg-ink-400); font-size:11px;">
+                    Build the sub-path structure under the root config. Depth is auto-calculated.
+                  </p>
+                </div>
               </div>
-              <div *ngIf="createForm.get('notifyEnabled')?.value">
-                <div class="field-group">
-                  <label class="field-label">Target email</label>
+
+              <div class="config-tree mb-4">
+
+                <!-- ROOT node card (read-only preview from form fields above) -->
+                <div class="ct-root-node">
+                  <div class="ct-root-icon">
+                    <i class="bi bi-diagram-3-fill"></i>
+                  </div>
+                  <div class="ct-root-body">
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                      <span class="ct-depth-badge" style="background:rgba(37,99,235,0.1); color:#2563eb; border:1px solid rgba(37,99,235,0.25);">Root · Depth 0</span>
+                      <span style="font-size:10px; color:var(--shg-ink-400)">Defined by Config Path &amp; Node Name fields above</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <code class="ct-path-chip">{{ createForm.get('configPath')?.value || 'Config Path' }}</code>
+                      <i class="bi bi-chevron-right" style="font-size:10px; color:var(--shg-ink-300)"></i>
+                      <code class="ct-path-chip">{{ createForm.get('nodeName')?.value || 'Node Name' }}</code>
+                    </div>
+                  </div>
+                  <button type="button" mat-flat-button color="primary" class="ct-add-root-btn" (click)="addRootChildNode()">
+                    <i class="bi bi-plus-lg me-1"></i> Add Level 1 Node
+                  </button>
+                </div>
+
+                <!-- Children list -->
+                <div class="ct-child-list" *ngIf="children.length > 0">
+                  <ng-container *ngFor="let childNode of children; let childIdx = index">
+                    <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: childNode, parentList: children, idx: childIdx, depth: 1 }"></ng-container>
+                  </ng-container>
+                </div>
+
+                <!-- Empty state -->
+                <div *ngIf="children.length === 0" class="ct-empty-state">
+                  <i class="bi bi-arrow-down-circle" style="font-size:20px; display:block; margin-bottom:8px;"></i>
+                  No sub-nodes yet. Click "+ Add Level 1 Node" to build the hierarchy.
+                </div>
+
+              </div>
+
+              <!-- Recursive node template -->
+              <ng-template #ctNodeTpl let-node="node" let-parentList="parentList" let-idx="idx" let-depth="depth">
+                <div class="ct-node">
+                  <div class="ct-node-card">
+
+                    <!-- Node header: depth badge + name input + action buttons -->
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                      <span class="ct-depth-badge" [ngStyle]="depthBadgeStyle(depth)">Depth {{ depth }}</span>
+                      <input type="text" class="ct-name-input flex-grow-1"
+                        [(ngModel)]="node.nodeName" [ngModelOptions]="{standalone:true}"
+                        [placeholder]="'Node name, e.g. ' + (depth === 1 ? 'PERSONAL_LOAN' : depth === 2 ? 'UNSECURED' : 'SUB_NODE')" />
+                      <button type="button" class="ct-btn ct-btn-add" (click)="addTreeNodeChild(node)" title="Add child node under this node">
+                        <i class="bi bi-plus-lg"></i><span>Child</span>
+                      </button>
+                      <button type="button" class="ct-btn ct-btn-remove" (click)="removeTreeNode(parentList, idx)" title="Remove this node">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </div>
+
+                    <!-- Workflow Key / BPMN row -->
+                    <div class="ct-workflow-row">
+                      <span class="ct-workflow-label">Workflow Key</span>
+
+                      <!-- Uploaded -->
+                      <div *ngIf="node.bpmnFileName && node.bpmnFileName !== 'Uploading...'" class="ct-bpmn-uploaded">
+                        <i class="bi bi-file-earmark-check-fill" style="color:#16a34a; font-size:13px; flex-shrink:0"></i>
+                        <span class="ct-bpmn-filename">{{ node.bpmnFileName }}</span>
+                        <label [attr.for]="'bpmn-reup-'+depth+'-'+idx" class="ct-bpmn-action-btn reup" title="Re-upload BPMN">
+                          <i class="bi bi-arrow-repeat"></i>
+                          <input [id]="'bpmn-reup-'+depth+'-'+idx" type="file" accept=".bpmn,.xml" style="display:none" (change)="onTreeNodeBpmnSelect($event, node)" />
+                        </label>
+                        <button type="button" class="ct-bpmn-action-btn del" (click)="clearNodeBpmn(node)" title="Remove BPMN">
+                          <i class="bi bi-trash3"></i>
+                        </button>
+                      </div>
+
+                      <!-- Uploading -->
+                      <div *ngIf="node.bpmnFileName === 'Uploading...'" class="ct-bpmn-uploading">
+                        <mat-spinner diameter="12"></mat-spinner>
+                        <span>Uploading...</span>
+                      </div>
+
+                      <!-- No file -->
+                      <div *ngIf="!node.bpmnFileName" class="ct-bpmn-none">
+                        <input type="text" class="ct-workflow-input"
+                          [(ngModel)]="node.workflowKey" [ngModelOptions]="{standalone:true}"
+                          placeholder="e.g. special-mortgage-flow (optional)" />
+                        <label [attr.for]="'bpmn-tree-'+depth+'-'+idx" class="ct-upload-lbl">
+                          <i class="bi bi-upload"></i> BPMN
+                          <input [id]="'bpmn-tree-'+depth+'-'+idx" type="file" accept=".bpmn,.xml" style="display:none" (change)="onTreeNodeBpmnSelect($event, node)" />
+                        </label>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Recursive children -->
+                  <div class="ct-child-list" *ngIf="node.children && node.children.length > 0">
+                    <ng-container *ngFor="let cNode of node.children; let cIdx = index">
+                      <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: cNode, parentList: node.children, idx: cIdx, depth: depth + 1 }"></ng-container>
+                    </ng-container>
+                  </div>
+                </div>
+              </ng-template>
+
+              <mat-divider class="mb-4"></mat-divider>
+              <div class="form-section-label">SLA Settings</div>
+              <div class="row g-3 mb-0">
+                <div class="col-12">
+                  <label class="field-label">SLA Timeout (minutes) <span style="color:#dc2626">*</span></label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="email" formControlName="notifyEmail" placeholder="e.g. alerts@example.com" />
-                    <mat-error *ngIf="createForm.get('notifyEmail')?.hasError('email') || createForm.get('notifyEmail')?.hasError('pattern')">
-                      Enter a valid email address
+                    <input matInput type="number" formControlName="globalSlaTimeoutMinutes" placeholder="e.g. 1440 (24 hours)" />
+                    <mat-error *ngIf="createForm.get('globalSlaTimeoutMinutes')?.hasError('required')">
+                      SLA timeout is required
                     </mat-error>
                   </mat-form-field>
                 </div>
-                <div class="field-group">
-                  <label class="field-label">Target mobile</label>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Step 3 Content -->
+          <div class="step-panel animate-fade" *ngIf="activeStep === 3">
+            <mat-card class="form-section-card p-4">
+              <div class="form-section-label">Escalation & Fallback Settings</div>
+              <div class="field-group mb-3">
+                <label class="field-label">Hard Escalation Mode <span style="color:#dc2626">*</span></label>
+                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                  <mat-select formControlName="hardEscalationMode">
+                    <mat-option value="DIRECT_TO_ADMIN">Direct to Admin</mat-option>
+                    <mat-option value="ROUND_ROBIN">Round Robin</mat-option>
+                    <mat-option value="RANDOM">Random</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="field-label">Fallback Admin User <span style="color:#dc2626">*</span></label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="tel" formControlName="notifyMobile" placeholder="e.g. 9876543210" maxlength="10" />
-                    <mat-error *ngIf="createForm.get('notifyMobile')?.hasError('pattern') || createForm.get('notifyMobile')?.hasError('maxlength')">
-                      Enter a valid 10-digit Indian mobile number
+                    <input matInput formControlName="fallbackAdminUserId" placeholder="e.g. system_user" />
+                    <mat-error *ngIf="createForm.get('fallbackAdminUserId')?.hasError('required')">
+                      Fallback Admin User is required
                     </mat-error>
                   </mat-form-field>
                 </div>
-                <div class="d-flex gap-4 mt-1">
-                  <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
-                  <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
-                  <mat-checkbox formControlName="notifyWhatsAppChannel" color="primary">WHATSAPP</mat-checkbox>
-                </div>
-              </div>
-            </div>
-          </mat-card>
-
-          <!-- Approval Settings Card -->
-          <mat-card class="form-section-card p-4" [class.required-card-error]="approvalTiersError">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <div class="d-flex align-items-center gap-2">
-                <div class="form-section-label mb-0">Approval Settings</div>
-                <span class="required-badge">Required</span>
-              </div>
-              <button type="button" mat-stroked-button class="add-tier-btn" (click)="addApprovalTier()">
-                + Add Tier
-              </button>
-            </div>
-
-            <!-- Error message -->
-            <div *ngIf="approvalTiersError" class="d-flex align-items-center gap-2 mb-3 mt-1 px-2 py-2 rounded-2"
-              style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px;">
-              <i class="bi bi-exclamation-circle-fill"></i>
-              <span>{{ approvalTiersError }}</span>
-            </div>
-
-            <div *ngIf="approvalTiers.length === 0 && !approvalTiersError" class="text-center py-3 mb-0"
-              style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
-              No approval tiers added
-            </div>
-            <div *ngIf="approvalTiers.length === 0 && approvalTiersError" class="text-center py-3 mb-0"
-              style="color:#dc2626; font-size:12px; border:1px dashed rgba(220,38,38,0.4); border-radius:8px; background:rgba(220,38,38,0.04)">
-              Add at least one approval tier to proceed
-            </div>
-
-            <div class="d-flex flex-column gap-3">
-              <div *ngFor="let tier of approvalTiers; let i = index" class="approval-tier-card p-3 rounded-3 border">
-
-                <!-- Tier Header -->
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <span class="tier-level-badge">Level {{ i + 1 }}</span>
-                  <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                    style="font-size:12px; text-decoration:none" (click)="removeApprovalTier(i)">Remove</button>
-                </div>
-
-                <!-- Tier Name -->
-                <div class="field-group">
-                  <label class="field-label">Tier name</label>
+                <div class="col-12 col-md-6">
+                  <label class="field-label">Fallback Admin Group <span style="color:#dc2626">*</span></label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput [(ngModel)]="tier.tierName" [ngModelOptions]="{standalone:true}"
-                      placeholder="e.g. Manager Final Audit" />
+                    <input matInput formControlName="fallbackAdminGroupId" placeholder="e.g. system_user" />
+                    <mat-error *ngIf="createForm.get('fallbackAdminGroupId')?.hasError('required')">
+                      Fallback Admin Group is required
+                    </mat-error>
                   </mat-form-field>
                 </div>
-
-                <!-- Authorized Groups -->
-                <div class="field-group">
-                  <label class="field-label">Authorized groups</label>
-                  <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedGroups.length > 0">
-                    <span *ngFor="let grp of tier.authorizedGroups; let j = index" class="group-chip">
-                      {{ grp }}
-                      <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromTier(i, j)"></i>
-                    </span>
-                  </div>
-                  <div class="d-flex gap-2">
-                    <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                      <input matInput [(ngModel)]="tier.newGroup" [ngModelOptions]="{standalone:true}"
-                        placeholder="e.g. CHECKER_GP"
-                        (keyup.enter)="addGroupToTier(i)" />
-                    </mat-form-field>
-                    <button type="button" mat-stroked-button class="add-group-btn" (click)="addGroupToTier(i)">Add</button>
-                  </div>
-                </div>
-
-                <!-- Authorized Users -->
-                <div class="field-group">
-                  <label class="field-label">Authorized users</label>
-                  <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedUsers.length > 0">
-                    <span *ngFor="let usr of tier.authorizedUsers; let j = index" class="user-chip">
-                      {{ usr }}
-                      <i class="bi bi-x" style="cursor:pointer" (click)="removeUserFromTier(i, j)"></i>
-                    </span>
-                  </div>
-                  <div class="d-flex gap-2">
-                    <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                      <input matInput [(ngModel)]="tier.newUser" [ngModelOptions]="{standalone:true}"
-                        placeholder="e.g. retail_agent_01"
-                        (keyup.enter)="addUserToTier(i)" />
-                    </mat-form-field>
-                    <button type="button" mat-stroked-button class="add-group-btn" (click)="addUserToTier(i)">Add</button>
-                  </div>
-                </div>
-
-                <!-- Strict Binding -->
-                <div class="d-flex align-items-center justify-content-between mt-1">
-                  <span class="field-label mb-0">Strict binding</span>
-                  <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}"
-                    color="primary"></mat-slide-toggle>
-                </div>
-
               </div>
-            </div>
+            </mat-card>
+          </div>
 
-          </mat-card>
+          <!-- Step 4 Content -->
+          <div class="step-panel animate-fade" *ngIf="activeStep === 4">
+            <mat-card class="form-section-card p-4">
+              <div class="form-section-label">Notifications</div>
+
+              <div class="notify-panel p-3 rounded-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <span class="fw-semibold shg-body">Enable Alerts</span>
+                  <mat-slide-toggle formControlName="notifyEnabled" color="primary"></mat-slide-toggle>
+                </div>
+                <div *ngIf="createForm.get('notifyEnabled')?.value">
+                  <div class="field-group">
+                    <label class="field-label">Target email</label>
+                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                      <input matInput type="email" formControlName="notifyEmail" placeholder="e.g. alerts@example.com" />
+                      <mat-error *ngIf="createForm.get('notifyEmail')?.hasError('email') || createForm.get('notifyEmail')?.hasError('pattern')">
+                        Enter a valid email address
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Target mobile</label>
+                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                      <input matInput type="tel" formControlName="notifyMobile" placeholder="e.g. 9876543210" maxlength="10" />
+                      <mat-error *ngIf="createForm.get('notifyMobile')?.hasError('pattern') || createForm.get('notifyMobile')?.hasError('maxlength')">
+                        Enter a valid 10-digit Indian mobile number
+                      </mat-error>
+                    </mat-form-field>
+                  </div>
+                  <div class="d-flex gap-4 mt-1">
+                    <mat-checkbox formControlName="notifyEmailChannel" color="primary">EMAIL</mat-checkbox>
+                    <mat-checkbox formControlName="notifySMSChannel" color="primary">SMS</mat-checkbox>
+                    <mat-checkbox formControlName="notifyWhatsAppChannel" color="primary">WHATSAPP</mat-checkbox>
+                  </div>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Step 5 Content -->
+          <div class="step-panel animate-fade" *ngIf="activeStep === 5">
+            <mat-card class="form-section-card p-4" [class.required-card-error]="approvalTiersError">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="form-section-label mb-0">Approval Settings</div>
+                  <span class="required-badge">Required</span>
+                </div>
+                <button type="button" mat-stroked-button class="add-tier-btn" (click)="addApprovalTier()">
+                  + Add Tier
+                </button>
+              </div>
+
+              <!-- Communication Required Toggle -->
+              <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-white mb-3 mt-2">
+                <div>
+                  <span class="fw-semibold shg-body d-block" style="font-size:13px; color:var(--shg-ink-900);">Communication Required</span>
+                  <span class="shg-caption text-muted" style="font-size:11px">Master toggle to enforce notification/preferences checks on approvers</span>
+                </div>
+                <mat-slide-toggle formControlName="communicationRequired" color="primary"></mat-slide-toggle>
+              </div>
+
+              <!-- Error message -->
+              <div *ngIf="approvalTiersError" class="d-flex align-items-center gap-2 mb-3 mt-1 px-2 py-2 rounded-2"
+                style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px;">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <span>{{ approvalTiersError }}</span>
+              </div>
+
+              <div *ngIf="approvalTiers.length === 0 && !approvalTiersError" class="text-center py-3 mb-0"
+                style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
+                No approval tiers added
+              </div>
+              <div *ngIf="approvalTiers.length === 0 && approvalTiersError" class="text-center py-3 mb-0"
+                style="color:#dc2626; font-size:12px; border:1px dashed rgba(220,38,38,0.4); border-radius:8px; background:rgba(220,38,38,0.04)">
+                Add at least one approval tier to proceed
+              </div>
+
+              <div class="d-flex flex-column gap-3">
+                <div *ngFor="let tier of approvalTiers; let i = index" class="approval-tier-card p-3 rounded-3 border">
+
+                  <!-- Tier Header -->
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="tier-level-badge">Level {{ i + 1 }}</span>
+                    <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
+                      style="font-size:12px; text-decoration:none" (click)="removeApprovalTier(i)">Remove</button>
+                  </div>
+
+                  <!-- Tier Name -->
+                  <div class="field-group">
+                    <label class="field-label">Tier name</label>
+                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                      <input matInput [(ngModel)]="tier.tierName" [ngModelOptions]="{standalone:true}"
+                        placeholder="e.g. Manager Final Audit" />
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Authorized Groups -->
+                  <div class="field-group">
+                    <label class="field-label">Authorized groups</label>
+                    <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedGroups.length > 0">
+                      <span *ngFor="let grp of tier.authorizedGroups; let j = index" class="group-chip">
+                        {{ grp }}
+                        <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromTier(i, j)"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                        <input matInput [(ngModel)]="tier.newGroup" [ngModelOptions]="{standalone:true}"
+                          placeholder="e.g. CHECKER_GP"
+                          (keyup.enter)="addGroupToTier(i)" />
+                      </mat-form-field>
+                      <button type="button" mat-stroked-button class="add-group-btn" (click)="addGroupToTier(i)">Add</button>
+                    </div>
+                  </div>
+
+                  <!-- Authorized Users -->
+                  <div class="field-group">
+                    <label class="field-label">Authorized users</label>
+                    
+                    <!-- Existing Users Table -->
+                    <div class="table-responsive border rounded-3 bg-white mb-3" *ngIf="tier.authorizedUsers.length > 0">
+                      <table class="table table-sm table-borderless align-middle mb-0" style="font-size:12px">
+                        <thead class="table-light">
+                          <tr class="border-bottom">
+                            <th class="ps-3 py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">User ID</th>
+                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Full Name</th>
+                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Contact Info</th>
+                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;" *ngIf="createForm.get('communicationRequired')?.value">Prefs</th>
+                            <th class="py-2 text-end pe-3 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let usr of tier.authorizedUsers; let j = index" class="border-bottom-0">
+                            <td class="ps-3 py-2 fw-semibold" style="color:var(--shg-ink-900);">{{ usr.userId }}</td>
+                            <td class="py-2 text-dark">{{ usr.fullName || '-' }}</td>
+                            <td class="py-2 text-muted">
+                              <div *ngIf="usr.email" style="font-size:11px;"><i class="bi bi-envelope me-1"></i>{{ usr.email }}</div>
+                              <div *ngIf="usr.mobileNumber" style="font-size:11px;"><i class="bi bi-phone me-1"></i>{{ usr.mobileNumber }}</div>
+                            </td>
+                            <td class="py-2" *ngIf="createForm.get('communicationRequired')?.value">
+                              <div class="d-flex gap-1">
+                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.EMAIL">EMAIL</span>
+                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.SMS">SMS</span>
+                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.WHATSAPP">WHATSAPP</span>
+                              </div>
+                            </td>
+                            <td class="py-2 text-end pe-3">
+                              <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0" (click)="removeUserFromTier(i, j)" title="Remove user">
+                                <i class="bi bi-trash-fill fs-6"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <!-- Add User Sub-Form -->
+                    <div class="p-3 border rounded-3 bg-white mb-2">
+                      <div class="fw-bold mb-2 text-uppercase" style="font-size: 10px; color: var(--shg-ink-500); letter-spacing: 0.5px;">Add Authorized User</div>
+                      <div class="row g-2 mb-2">
+                        <div class="col-12 col-sm-6">
+                          <label class="field-label mb-1" style="font-size:11px;">User ID <span class="text-danger">*</span></label>
+                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                            <input matInput [(ngModel)]="tier.newUserId" [ngModelOptions]="{standalone:true}" placeholder="e.g. retail_agent_01" (keyup.enter)="addUserToTier(i)" />
+                          </mat-form-field>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <label class="field-label mb-1" style="font-size:11px;">Full Name</label>
+                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                            <input matInput [(ngModel)]="tier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Ramana Yadavalli" (keyup.enter)="addUserToTier(i)" />
+                          </mat-form-field>
+                        </div>
+                      </div>
+                      <div class="row g-2 mb-2">
+                        <div class="col-12 col-sm-6">
+                          <label class="field-label mb-1" style="font-size:11px;">Email</label>
+                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                            <input matInput type="email" [(ngModel)]="tier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="e.g. ramana@toucanint.com" (keyup.enter)="addUserToTier(i)" />
+                          </mat-form-field>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                          <label class="field-label mb-1" style="font-size:11px;">Mobile Number</label>
+                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                            <input matInput [(ngModel)]="tier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" (keyup.enter)="addUserToTier(i)" />
+                          </mat-form-field>
+                        </div>
+                      </div>
+                      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 pt-2 border-top">
+                        <div class="d-flex gap-3 align-items-center flex-wrap" *ngIf="createForm.get('communicationRequired')?.value">
+                          <span class="field-label mb-0" style="font-size:11px;">Preferences:</span>
+                          <mat-checkbox [(ngModel)]="tier.newUserPrefEmail" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">EMAIL</mat-checkbox>
+                          <mat-checkbox [(ngModel)]="tier.newUserPrefSMS" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">SMS</mat-checkbox>
+                          <mat-checkbox [(ngModel)]="tier.newUserPrefWhatsApp" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">WHATSAPP</mat-checkbox>
+                        </div>
+                        <span *ngIf="!createForm.get('communicationRequired')?.value"></span>
+                        <button type="button" mat-flat-button color="primary" class="btn btn-sm text-uppercase" style="height:32px; font-size:11px; font-weight:600; padding:0 12px;" (click)="addUserToTier(i)" [disabled]="!tier.newUserId.trim()">
+                          Add User
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Strict Binding -->
+                  <div class="d-flex align-items-center justify-content-between mt-1">
+                    <span class="field-label mb-0">Strict binding</span>
+                    <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}"
+                      color="primary"></mat-slide-toggle>
+                  </div>
+
+                </div>
+              </div>
+
+            </mat-card>
+          </div>
 
         </div>
       </div>
@@ -407,7 +616,9 @@
      ========================================================= -->
 <div class="create-action-footer" *ngIf="activeProductId">
   <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
-  <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
+  <button mat-stroked-button type="button" *ngIf="activeStep > 1" (click)="prevStep()">Back</button>
+  <button mat-flat-button color="primary" type="button" *ngIf="activeStep < 5" (click)="nextStep()">Next</button>
+  <button mat-flat-button color="primary" type="button" *ngIf="activeStep === 5" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
     <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
     <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
   </button>
