@@ -8,24 +8,51 @@ export interface WorkflowKeys {
   [key: string]: string;
 }
 
+export type CommunicationChannel = 'EMAIL' | 'SMS' | 'WHATSAPP';
+export type EscalationMode = 'DIRECT_TO_ADMIN' | 'ROUND_ROBIN' | 'RANDOM';
+
+export interface UserDefinition {
+  userId: string;
+  fullName: string;
+  email: string;
+  mobileNumber: string;
+  preferences: {
+    EMAIL?: boolean;
+    SMS?: boolean;
+    WHATSAPP?: boolean;
+  };
+}
+
 export interface ApprovalTier {
   level: number;
   tierName: string;
   authorizedGroups: string[];
-  authorizedUsers: string[];
+  authorizedUsers: UserDefinition[];
   strictBinding: boolean;
 }
 
 export interface ApprovalSettings {
   totalRequiredLevels: number;
   tiers: ApprovalTier[];
+  communicationRequired: boolean;
+}
+
+export interface EscalationStrategySettings {
+  hardEscalationMode: EscalationMode;
 }
 
 export interface NotificationSettings {
   enabled: boolean;
-  channels: string[];
+  channels: CommunicationChannel[];
   targetEmailId: string;
   targetMobileNumber: string;
+}
+
+export interface CaseConfigurationChild {
+  nodeName: string;
+  currentDepthLevel: number;
+  workflowKey: string;
+  children: CaseConfigurationChild[];
 }
 
 export interface CaseConfiguration {
@@ -38,9 +65,11 @@ export interface CaseConfiguration {
   globalSlaTimeoutMinutes: number;
   fallbackAdminUserId: string;
   fallbackAdminGroupId: string;
-  workflowKeys: WorkflowKeys;
+  workflowKey: string;
+  children?: CaseConfigurationChild[];
   approvalSettings: ApprovalSettings;
   notificationSettings: NotificationSettings;
+  escalationStrategySettings: EscalationStrategySettings;
   createdDate: string;
   lastModifiedDate: string;
   modifiedByUser: string;
@@ -57,29 +86,92 @@ export class ConfigurationService {
     {
       id: '6a2d0382079f626ec6259270',
       productId: 'PRD-D7F1A6A2',
-      configPath: 'LOAN.RETAIL.EXPRESS',
-      nodeName: 'Retail Express Micro Pathway Node',
+      configPath: 'LOAN',
+      nodeName: 'LOAN_ROOT',
       parentConfigurationId: null,
-      currentDepthLevel: 3,
+      currentDepthLevel: 0,
       globalSlaTimeoutMinutes: 1440,
       fallbackAdminUserId: 'retail_operations_manager',
       fallbackAdminGroupId: 'RETAIL_ADMIN_GP',
-      workflowKeys: {
-        'LOAN': 'universal-case-flow',
-        'EXPRESS': 'retail-express-flow'
-      },
+      workflowKey: 'universal-case-flow',
+      children: [
+        {
+          nodeName: 'PERSONAL_LOAN',
+          currentDepthLevel: 1,
+          workflowKey: '',
+          children: [
+            {
+              nodeName: 'UNSECURED',
+              currentDepthLevel: 2,
+              workflowKey: '',
+              children: []
+            }
+          ]
+        },
+        {
+          nodeName: 'MORTGAGE',
+          currentDepthLevel: 1,
+          workflowKey: 'special-mortgage-flow',
+          children: [
+            {
+              nodeName: 'COMMERCIAL_PROPERTY',
+              currentDepthLevel: 2,
+              workflowKey: 'commercial-heavy-flow',
+              children: []
+            },
+            {
+              nodeName: 'RESIDENTIAL_PROPERTY',
+              currentDepthLevel: 2,
+              workflowKey: '',
+              children: []
+            }
+          ]
+        }
+      ],
       approvalSettings: {
         totalRequiredLevels: 2,
+        communicationRequired: true,
         tiers: [
-          { level: 1, tierName: 'Automated Score Validation Check', authorizedGroups: ['EXPRESS_MAKER_GP'], authorizedUsers: [], strictBinding: true },
-          { level: 2, tierName: 'Manager Final Audit Confirmation', authorizedGroups: ['EXPRESS_CHECKER_GP'], authorizedUsers: [], strictBinding: true }
+          {
+            level: 1,
+            tierName: 'Automated Score Validation Check',
+            authorizedGroups: ['EXPRESS_MAKER_GP'],
+            authorizedUsers: [
+              {
+                userId: 'retail_agent_01',
+                fullName: 'Ramana Yadavalli',
+                email: 'ramana@toucanint.com',
+                mobileNumber: '9999988888',
+                preferences: { EMAIL: true, SMS: false, WHATSAPP: true }
+              }
+            ],
+            strictBinding: true
+          },
+          {
+            level: 2,
+            tierName: 'Manager Final Audit Confirmation',
+            authorizedGroups: ['EXPRESS_CHECKER_GP'],
+            authorizedUsers: [
+              {
+                userId: 'retail_agent_02',
+                fullName: 'Lokesh Kumar',
+                email: 'lokesh@toucanint.com',
+                mobileNumber: '8514785625',
+                preferences: { EMAIL: false, SMS: true, WHATSAPP: false }
+              }
+            ],
+            strictBinding: true
+          }
         ]
       },
       notificationSettings: {
         enabled: true,
-        channels: ['EMAIL', 'SMS'],
+        channels: ['EMAIL', 'SMS', 'WHATSAPP'],
         targetEmailId: 'retail-alerts@toucan.com',
         targetMobileNumber: '+1234567890'
+      },
+      escalationStrategySettings: {
+        hardEscalationMode: 'ROUND_ROBIN'
       },
       createdDate: '2026-06-15T10:21:14.067Z',
       lastModifiedDate: '2026-06-15T10:21:14.067Z',
@@ -98,16 +190,16 @@ export class ConfigurationService {
     localStorage.setItem('mock_configs', JSON.stringify(this.mockConfigs));
   }
 
-  // Get configuration nodes filtered by product tenant (POST http://192.168.100.61:8091/api/cms/configuration/getall)
+  // Get configuration nodes filtered by product tenant (POST /api/cms/configuration/search)
   getConfigurationsByProduct(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC', userId = 'system_admin'): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
       .set('X-User-Id', userId)
       .set('X-Product-Id', productId);
 
-    const payload = { page, size, sortField, sortOrder };
+    const payload = { criteriaList: [], page, size, sortField, sortOrder };
 
-    return this.http.post<any>(`${this.apiUrl}/getall`, payload, { headers }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/search`, payload, { headers }).pipe(
       map(res => {
         if (res && res.success && res.responseObject && Array.isArray(res.responseObject)) {
           for (const cfg of res.responseObject) {
@@ -285,6 +377,88 @@ export class ConfigurationService {
         return of({
           success: false,
           message: 'BPMN deploy failed'
+        });
+      })
+    );
+  }
+
+  // Inquire Case Configuration (POST /api/cms/configuration/inq)
+  inquireCaseConfiguration(configId: string, productId?: string, userId = 'system_admin'): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-User-Id':    userId,
+      'X-Product-Id': productId || '',
+      'Content-Type': 'application/json'
+    });
+
+    const payload = {
+      keyValue: configId
+    };
+
+    return this.http.post<any>(`${this.apiUrl}/inq`, payload, { headers }).pipe(
+      catchError(err => {
+        console.warn('Backend API offline, utilizing mock configuration inquirer.', err);
+        const config = this.mockConfigs.find(c => c.id === configId);
+        if (config) {
+          return of({
+            success: true,
+            message: 'Configuration retrieved successfully (Mock Fallback)',
+            responseObject: config,
+            statusCode: 200
+          });
+        }
+        return of({
+          success: false,
+          message: 'Target configuration not found in mock store.',
+          statusCode: 404
+        });
+      })
+    );
+  }
+
+  // Search Case Configurations (POST /api/cms/configuration/search)
+  searchCaseConfigurations(criteria: any, productId?: string, userId = 'system_admin'): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-User-Id':    userId,
+      'X-Product-Id': productId || '',
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post<any>(`${this.apiUrl}/search`, criteria, { headers }).pipe(
+      catchError(err => {
+        console.warn('Backend API offline, utilizing mock configuration search.', err);
+        let results = [...this.mockConfigs];
+        if (productId) {
+          results = results.filter(c => c.productId === productId);
+        }
+
+        // Apply configPath filter if present
+        const pathCriteria = criteria.criteriaList?.find((c: any) => c.field === 'configPath');
+        if (pathCriteria) {
+          if (pathCriteria.operator === 'EQUALS') {
+            results = results.filter(c => c.configPath === pathCriteria.value);
+          }
+        }
+
+        // Sort
+        results.sort((a, b) => {
+          const valA = (a as any)[criteria.sortField] || '';
+          const valB = (b as any)[criteria.sortField] || '';
+          if (typeof valA === 'string' && typeof valB === 'string') {
+            return criteria.sortOrder === 'ASC' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          }
+          return 0;
+        });
+
+        // Paginate
+        const start = (criteria.page - 1) * criteria.size;
+        const pageItems = results.slice(start, start + criteria.size);
+
+        return of({
+          success: true,
+          message: 'Search completed (Mock Fallback)',
+          responseObject: pageItems,
+          statusCode: 200,
+          totalCount: results.length
         });
       })
     );

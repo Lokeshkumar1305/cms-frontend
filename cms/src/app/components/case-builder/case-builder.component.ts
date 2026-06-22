@@ -2,7 +2,7 @@ import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ConfigurationService, CaseConfiguration, NotificationSettings } from '../../services/configuration.service';
+import { ConfigurationService, CaseConfiguration, NotificationSettings, CommunicationChannel } from '../../services/configuration.service';
 import { TenantContextService } from '../../services/tenant-context.service';
 import { Sort } from '@angular/material/sort';
 
@@ -74,7 +74,8 @@ export class CaseBuilderComponent implements OnInit {
       notifyEmail:             ['', [Validators.email]],
       notifyMobile:            [''],
       notifySMSChannel:        [false],
-      notifyEmailChannel:      [true]
+      notifyEmailChannel:      [true],
+      notifyWhatsAppChannel:   [false]
     });
   }
 
@@ -111,7 +112,8 @@ export class CaseBuilderComponent implements OnInit {
       notifyEmail:             config.notificationSettings.targetEmailId,
       notifyMobile:            config.notificationSettings.targetMobileNumber,
       notifySMSChannel:        config.notificationSettings.channels.includes('SMS'),
-      notifyEmailChannel:      config.notificationSettings.channels.includes('EMAIL')
+      notifyEmailChannel:      config.notificationSettings.channels.includes('EMAIL'),
+      notifyWhatsAppChannel:   config.notificationSettings.channels.includes('WHATSAPP')
     });
   }
 
@@ -132,9 +134,10 @@ export class CaseBuilderComponent implements OnInit {
     this.isSubmitting = true;
     const formVal = this.updateForm.value;
 
-    const channels: string[] = [];
-    if (formVal.notifySMSChannel)   channels.push('SMS');
-    if (formVal.notifyEmailChannel) channels.push('EMAIL');
+    const channels: CommunicationChannel[] = [];
+    if (formVal.notifySMSChannel)      channels.push('SMS');
+    if (formVal.notifyEmailChannel)   channels.push('EMAIL');
+    if (formVal.notifyWhatsAppChannel) channels.push('WHATSAPP');
 
     const notificationSettings: NotificationSettings = {
       enabled:            formVal.notifyEnabled,

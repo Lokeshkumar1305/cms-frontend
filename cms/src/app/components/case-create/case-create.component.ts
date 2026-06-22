@@ -1,9 +1,17 @@
-import { Component, OnInit, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ConfigurationService, CaseConfiguration, NotificationSettings } from '../../services/configuration.service';
+import { ConfigurationService, CaseConfiguration, NotificationSettings, UserDefinition, CommunicationChannel } from '../../services/configuration.service';
 import { TenantContextService } from '../../services/tenant-context.service';
+
+export interface TreeNode {
+  nodeName: string;
+  currentDepthLevel: number;
+  workflowKey: string;
+  children: TreeNode[];
+  bpmnFileName?: string;
+}
 
 @Component({
   selector: 'app-case-create',
@@ -18,32 +26,116 @@ export class CaseCreateComponent implements OnInit {
   errorMessage = '';
   approvalTiersError = '';
 
+  activeStep = 1;
+  visitedSteps = new Set<number>();
+
+  goToStep(step: number): void {
+    if (step >= 1 && step <= 5) {
+      this.visitedSteps.add(this.activeStep);
+      this.activeStep = step;
+    }
+  }
+
+  nextStep(): void {
+    if (this.activeStep < 5) {
+      this.visitedSteps.add(this.activeStep);
+      this.activeStep++;
+    }
+  }
+
+  prevStep(): void {
+    if (this.activeStep > 1) {
+      this.visitedSteps.add(this.activeStep);
+      this.activeStep--;
+    }
+  }
+
+  isStepComplete(step: number): boolean {
+    if (!this.createForm) return false;
+    switch (step) {
+      case 1: return ['productId', 'userId'].every(c => this.createForm.get(c)?.valid);
+      case 2: return ['nodeName', 'globalSlaTimeoutMinutes'].every(c => this.createForm.get(c)?.valid);
+      case 3: return ['hardEscalationMode', 'fallbackAdminUserId'].every(c => this.createForm.get(c)?.valid);
+      case 4: return this.visitedSteps.has(4);
+      case 5: return this.approvalTiers.length > 0 && this.approvalTiers.every(t => t.tierName.trim().length > 0);
+      default: return false;
+    }
+  }
+
+  findInvalidStep(): number | null {
+    const s1 = ['productId', 'userId'];
+    const s2 = ['nodeName', 'globalSlaTimeoutMinutes'];
+    const s3 = ['hardEscalationMode', 'fallbackAdminUserId', 'fallbackAdminGroupId'];
+    const s4 = ['notifyEnabled', 'notifyEmail', 'notifyMobile'];
+
+    for (const ctrl of s1) {
+      if (this.createForm.get(ctrl)?.invalid) return 1;
+    }
+    for (const ctrl of s2) {
+      if (this.createForm.get(ctrl)?.invalid) return 2;
+    }
+    for (const ctrl of s3) {
+      if (this.createForm.get(ctrl)?.invalid) return 3;
+    }
+    for (const ctrl of s4) {
+      if (this.createForm.get(ctrl)?.invalid) return 4;
+    }
+    if (this.approvalTiers.length === 0) return 5;
+    return null;
+  }
+
   editMode = false;
   editConfigId = '';
 
+  rootBpmnFileName = '';
+  rootBpmnUploading = false;
+
   createForm!: FormGroup;
-  nodes: string[] = [];
-  newNodeName = '';
+  children: TreeNode[] = [];
 
-  nodeWorkflows: { nodeName: string; bpmnFile: string }[] = [];
-  substageEntries: { name: string; bpmnFile: string }[] = [];
+  get liveConfigPath(): string { return this.createForm?.get('configPath')?.value || ''; }
+  get liveNodeName():   string { return this.createForm?.get('nodeName')?.value   || ''; }
 
-  mainUploadStates: boolean[] = [];
-  subUploadStates: boolean[] = [];
-  mainUploadedStates: boolean[] = [];
-  subUploadedStates: boolean[] = [];
+  get maxTreeDepth(): number {
+    const depth = (nodes: TreeNode[]): number =>
+      nodes.length ? 1 + Math.max(...nodes.map(n => depth(n.children))) : 0;
+    return depth(this.children);
+  }
+
+  get totalDepth(): number {
+    return this.maxTreeDepth + 1;
+  }
 
   approvalTiers: {
     tierName: string;
     authorizedGroups: string[];
-    authorizedUsers: string[];
+    authorizedUsers: UserDefinition[];
     strictBinding: boolean;
     newGroup: string;
-    newUser: string;
+    newUserId: string;
+    newUserFullName: string;
+    newUserEmail: string;
+    newUserMobileNumber: string;
+    newUserPrefEmail: boolean;
+    newUserPrefSMS: boolean;
+    newUserPrefWhatsApp: boolean;
   }[] = [];
 
   addApprovalTier(): void {
-    this.approvalTiers.push({ tierName: '', authorizedGroups: [], authorizedUsers: [], strictBinding: true, newGroup: '', newUser: '' });
+    this.approvalTiers.push({
+      tierName: '',
+      authorizedGroups: [],
+      authorizedUsers: [],
+      strictBinding: false,
+      newGroup: '',
+      newUserId: '',
+      newUserFullName: '',
+      newUserEmail: '',
+      newUserMobileNumber: '',
+      newUserPrefEmail: false,
+      newUserPrefSMS: false,
+      newUserPrefWhatsApp: false
+    });
     this.approvalTiersError = '';
   }
 
@@ -64,11 +156,38 @@ export class CaseCreateComponent implements OnInit {
   }
 
   addUserToTier(i: number): void {
-    const val = this.approvalTiers[i].newUser.trim();
-    if (val && !this.approvalTiers[i].authorizedUsers.includes(val)) {
-      this.approvalTiers[i].authorizedUsers.push(val);
+    const tier = this.approvalTiers[i];
+    const userId = tier.newUserId.trim();
+    const fullName = tier.newUserFullName.trim();
+    const email = tier.newUserEmail.trim();
+    const mobileNumber = tier.newUserMobileNumber.trim();
+    if (!userId) return;
+
+    if (tier.authorizedUsers.some(u => u.userId === userId)) {
+      return;
     }
-    this.approvalTiers[i].newUser = '';
+
+    const newUser: UserDefinition = {
+      userId,
+      fullName,
+      email,
+      mobileNumber,
+      preferences: {
+        EMAIL: tier.newUserPrefEmail,
+        SMS: tier.newUserPrefSMS,
+        WHATSAPP: tier.newUserPrefWhatsApp
+      }
+    };
+
+    tier.authorizedUsers.push(newUser);
+
+    tier.newUserId = '';
+    tier.newUserFullName = '';
+    tier.newUserEmail = '';
+    tier.newUserMobileNumber = '';
+    tier.newUserPrefEmail = false;
+    tier.newUserPrefSMS = false;
+    tier.newUserPrefWhatsApp = false;
   }
 
   removeUserFromTier(i: number, j: number): void {
@@ -81,7 +200,8 @@ export class CaseCreateComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private configService: ConfigurationService,
-    private tenantContext: TenantContextService
+    private tenantContext: TenantContextService,
+    public cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -93,7 +213,12 @@ export class CaseCreateComponent implements OnInit {
       this.prefillForm(navState.config);
     } else {
       this.initForm();
+      this.addApprovalTier();
     }
+
+    this.createForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.cdr.detectChanges();
+    });
 
     this.tenantContext.activeTenant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tenant => {
       if (tenant) {
@@ -115,7 +240,7 @@ export class CaseCreateComponent implements OnInit {
       userId:                  ['', [Validators.required]],
       configPath:              ['', [Validators.required]],
       nodeName:                ['', [Validators.required]],
-      currentDepthLevel:       [null, [Validators.required, Validators.min(1)]],
+      currentDepthLevel:       [0],
       globalSlaTimeoutMinutes: [null, [Validators.required, Validators.min(1)]],
       fallbackAdminUserId:     ['', [Validators.required]],
       fallbackAdminGroupId:    ['', [Validators.required]],
@@ -124,16 +249,25 @@ export class CaseCreateComponent implements OnInit {
       notifyMobile:            ['', [Validators.pattern(/^[6-9]\d{9}$/), Validators.maxLength(10)]],
       notifySMSChannel:        [false],
       notifyEmailChannel:      [false],
-      notifyWhatsAppChannel:   [false]
+      notifyWhatsAppChannel:   [false],
+      communicationRequired:   [false],
+      hardEscalationMode:      ['ROUND_ROBIN', [Validators.required]],
+      workflowKey:             ['']
     });
+
+  }
+
+  private mapConfigChildren(children: any[]): TreeNode[] {
+    return children.map(c => ({
+      nodeName:          c.nodeName,
+      currentDepthLevel: c.currentDepthLevel,
+      workflowKey:       c.workflowKey || '',
+      children:          this.mapConfigChildren(c.children || [])
+    }));
   }
 
   private prefillForm(config: CaseConfiguration): void {
-    this.nodes = config.configPath ? config.configPath.split('.') : [];
-    this.nodeWorkflows = this.nodes.map(node => ({
-      nodeName: node,
-      bpmnFile: config.workflowKeys?.[node] || ''
-    }));
+    this.children = this.mapConfigChildren(config.children || []);
 
     const notify = config.notificationSettings;
     this.createForm.patchValue({
@@ -150,125 +284,151 @@ export class CaseCreateComponent implements OnInit {
       notifyMobile:            notify?.targetMobileNumber ?? '',
       notifySMSChannel:        notify?.channels?.includes('SMS') ?? false,
       notifyEmailChannel:      notify?.channels?.includes('EMAIL') ?? false,
-      notifyWhatsAppChannel:   notify?.channels?.includes('WHATSAPP') ?? false
+      notifyWhatsAppChannel:   notify?.channels?.includes('WHATSAPP') ?? false,
+      communicationRequired:   config.approvalSettings?.communicationRequired ?? false,
+      hardEscalationMode:      config.escalationStrategySettings?.hardEscalationMode || 'ROUND_ROBIN',
+      workflowKey:             config.workflowKey || ''
     });
 
     this.approvalTiers = (config.approvalSettings?.tiers || []).map(t => ({
       tierName:         t.tierName,
       authorizedGroups: [...(t.authorizedGroups || [])],
-      authorizedUsers:  [...(t.authorizedUsers || [])],
-      strictBinding:    t.strictBinding,
+      authorizedUsers:  (t.authorizedUsers || []).map(u => ({
+        userId: u.userId,
+        fullName: u.fullName || '',
+        email: u.email || '',
+        mobileNumber: u.mobileNumber || '',
+        preferences: {
+          EMAIL: u.preferences?.EMAIL ?? false,
+          SMS: u.preferences?.SMS ?? false,
+          WHATSAPP: u.preferences?.WHATSAPP ?? false
+        }
+      })),
+      strictBinding:    t.strictBinding ?? false,
       newGroup:         '',
-      newUser:          ''
+      newUserId:        '',
+      newUserFullName:  '',
+      newUserEmail:     '',
+      newUserMobileNumber: '',
+      newUserPrefEmail: false,
+      newUserPrefSMS:   false,
+      newUserPrefWhatsApp: false
     }));
   }
 
-  addNode(): void {
-    const val = this.newNodeName.trim().toUpperCase();
-    if (val && !this.nodes.includes(val) && /^[A-Z0-9_-]+$/.test(val)) {
-      this.nodes.push(val);
-      this.newNodeName = '';
-      this.updateConfigPath();
+  addTreeNodeChild(parent: TreeNode): void {
+    if (!parent.children) {
+      parent.children = [];
     }
+    parent.children.push({
+      nodeName: '',
+      currentDepthLevel: parent.currentDepthLevel + 1,
+      workflowKey: '',
+      children: []
+    });
+    this.cdr.detectChanges();
   }
 
-  removeNode(index: number): void {
-    this.nodes.splice(index, 1);
-    this.updateConfigPath();
+  addRootChildNode(): void {
+    this.children.push({
+      nodeName: '',
+      currentDepthLevel: 1,
+      workflowKey: '',
+      children: []
+    });
+    this.cdr.detectChanges();
   }
 
-  private updateConfigPath(): void {
-    this.createForm.patchValue({ configPath: this.nodes.join('.') });
-    this.syncWorkflows();
+  removeTreeNode(parentList: TreeNode[], idx: number): void {
+    parentList.splice(idx, 1);
+    this.cdr.detectChanges();
   }
 
-  private syncWorkflows(): void {
-    const updated: typeof this.nodeWorkflows = [];
-    for (const node of this.nodes) {
-      const existing = this.nodeWorkflows.find(w => w.nodeName === node);
-      if (existing) {
-        updated.push(existing);
-      } else {
-        updated.push({ nodeName: node, bpmnFile: '' });
-      }
-    }
-    this.nodeWorkflows = updated;
+  depthBadgeStyle(depth: number): { [key: string]: string } {
+    const palette: Record<number, [string, string]> = {
+      1: ['rgba(124,58,237,0.1)', '#7c3aed'],
+      2: ['rgba(217,119,6,0.1)',  '#d97706'],
+      3: ['rgba(22,163,74,0.1)',  '#16a34a'],
+      4: ['rgba(13,124,102,0.1)', '#0d7c66'],
+    };
+    const [bg, color] = palette[depth] ?? ['rgba(107,119,148,0.1)', '#6b7794'];
+    return {
+      background: bg,
+      color,
+      border: `1px solid ${color}40`
+    };
   }
 
-  addSubstage(): void {
-    this.substageEntries.push({ name: '', bpmnFile: '' });
-  }
-
-  removeSubstage(idx: number): void {
-    this.substageEntries.splice(idx, 1);
-  }
-
-  onBpmnFileSelect(event: Event, wIdx: number): void {
+  onTreeNodeBpmnSelect(event: Event, node: TreeNode): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
     const file = input.files[0];
     input.value = '';
+    node.bpmnFileName = 'Uploading...';
+    this.cdr.detectChanges();
 
-    this.mainUploadStates[wIdx] = true;
-    this.mainUploadedStates[wIdx] = false;
     this.configService.deployBpmnFile(
       this.createForm.get('productId')?.value || this.activeProductId,
       this.createForm.get('userId')?.value    || 'system_admin',
       file
     ).subscribe({
       next: (res) => {
-        this.mainUploadStates[wIdx] = false;
         if (res?.status === 'SUCCESS' && res?.resourceName) {
-          this.nodeWorkflows[wIdx].bpmnFile = res.resourceName.replace(/\.(bpmn|xml)$/i, '');
-          this.mainUploadedStates[wIdx] = true;
+          node.workflowKey  = res.resourceName.replace(/\.(bpmn|xml)$/i, '');
+          node.bpmnFileName = res.resourceName;
         } else {
-          this.nodeWorkflows[wIdx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+          node.workflowKey  = file.name.replace(/\.(bpmn|xml)$/i, '');
+          node.bpmnFileName = file.name;
         }
+        this.cdr.detectChanges();
       },
       error: () => {
-        this.mainUploadStates[wIdx] = false;
-        this.nodeWorkflows[wIdx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+        node.workflowKey  = file.name.replace(/\.(bpmn|xml)$/i, '');
+        node.bpmnFileName = file.name;
+        this.cdr.detectChanges();
       }
     });
   }
 
-  clearMainUpload(wIdx: number): void {
-    this.nodeWorkflows[wIdx].bpmnFile = '';
-    this.mainUploadedStates[wIdx] = false;
+  clearNodeBpmn(node: TreeNode): void {
+    node.workflowKey  = '';
+    node.bpmnFileName = '';
+    this.cdr.detectChanges();
   }
 
-  onSubstageBpmnUpload(event: Event, idx: number): void {
+  onRootBpmnSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
     const file = input.files[0];
     input.value = '';
+    this.rootBpmnUploading = true;
+    this.rootBpmnFileName  = 'Uploading...';
 
-    this.subUploadStates[idx] = true;
-    this.subUploadedStates[idx] = false;
     this.configService.deployBpmnFile(
       this.createForm.get('productId')?.value || this.activeProductId,
       this.createForm.get('userId')?.value    || 'system_admin',
       file
     ).subscribe({
       next: (res) => {
-        this.subUploadStates[idx] = false;
-        if (res?.status === 'SUCCESS' && res?.resourceName) {
-          this.substageEntries[idx].bpmnFile = res.resourceName.replace(/\.(bpmn|xml)$/i, '');
-          this.subUploadedStates[idx] = true;
-        } else {
-          this.substageEntries[idx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
-        }
+        this.rootBpmnUploading = false;
+        const key = (res?.status === 'SUCCESS' && res?.resourceName)
+          ? res.resourceName.replace(/\.(bpmn|xml)$/i, '')
+          : file.name.replace(/\.(bpmn|xml)$/i, '');
+        const displayName = (res?.status === 'SUCCESS' && res?.resourceName) ? res.resourceName : file.name;
+        this.createForm.patchValue({ workflowKey: key });
+        this.rootBpmnFileName = displayName;
       },
       error: () => {
-        this.subUploadStates[idx] = false;
-        this.substageEntries[idx].bpmnFile = file.name.replace(/\.(bpmn|xml)$/i, '');
+        this.rootBpmnUploading = false;
+        this.createForm.patchValue({ workflowKey: file.name.replace(/\.(bpmn|xml)$/i, '') });
+        this.rootBpmnFileName = file.name;
       }
     });
   }
 
-  clearSubUpload(idx: number): void {
-    this.substageEntries[idx].bpmnFile = '';
-    this.subUploadedStates[idx] = false;
+  clearRootBpmn(): void {
+    this.rootBpmnFileName = '';
+    this.createForm.patchValue({ workflowKey: '' });
   }
 
   onSubmit(): void {
@@ -277,18 +437,23 @@ export class CaseCreateComponent implements OnInit {
 
     if (this.createForm.invalid) {
       this.createForm.markAllAsTouched();
+      const errorStep = this.findInvalidStep();
+      if (errorStep !== null) {
+        this.activeStep = errorStep;
+      }
       return;
     }
 
     if (this.approvalTiers.length === 0) {
       this.approvalTiersError = 'At least one approval tier is required.';
+      this.activeStep = 5;
       return;
     }
 
     // Flush any pending group/user inputs that weren't explicitly added
     for (let i = 0; i < this.approvalTiers.length; i++) {
       if (this.approvalTiers[i].newGroup.trim()) this.addGroupToTier(i);
-      if (this.approvalTiers[i].newUser.trim())  this.addUserToTier(i);
+      if (this.approvalTiers[i].newUserId.trim())  this.addUserToTier(i);
     }
 
     this.isSubmitting = true;
@@ -296,19 +461,7 @@ export class CaseCreateComponent implements OnInit {
     const productId: string = formVal.productId || this.activeProductId;
     const userId: string    = formVal.userId    || 'system_admin';
 
-    const workflowKeys: { [key: string]: string } = {};
-    for (const item of this.nodeWorkflows) {
-      if (item.nodeName.trim() && item.bpmnFile.trim()) {
-        workflowKeys[item.nodeName.trim()] = item.bpmnFile.trim();
-      }
-    }
-    for (const sub of this.substageEntries) {
-      if (sub.name.trim() && sub.bpmnFile.trim()) {
-        workflowKeys[sub.name.trim()] = sub.bpmnFile.trim();
-      }
-    }
-
-    const channels: string[] = [];
+    const channels: CommunicationChannel[] = [];
     if (formVal.notifySMSChannel)      channels.push('SMS');
     if (formVal.notifyEmailChannel)   channels.push('EMAIL');
     if (formVal.notifyWhatsAppChannel) channels.push('WHATSAPP');
@@ -321,22 +474,37 @@ export class CaseCreateComponent implements OnInit {
     };
 
     const payload = {
-      configPath:              this.nodes.join('.'),
+      configPath:              formVal.configPath,
       nodeName:                formVal.nodeName,
-      currentDepthLevel:       formVal.currentDepthLevel,
+      currentDepthLevel:       0,
       globalSlaTimeoutMinutes: formVal.globalSlaTimeoutMinutes,
       fallbackAdminUserId:     formVal.fallbackAdminUserId,
       fallbackAdminGroupId:    formVal.fallbackAdminGroupId,
-      workflowKeys,
+      workflowKey:             formVal.workflowKey,
+      children:                this.children,
       notificationSettings,
+      escalationStrategySettings: {
+        hardEscalationMode: formVal.hardEscalationMode
+      },
       approvalSettings: {
         totalRequiredLevels: this.approvalTiers.length,
+        communicationRequired: formVal.communicationRequired,
         tiers: this.approvalTiers.map((t, idx) => ({
           level: idx + 1,
           tierName: t.tierName,
           authorizedGroups: t.authorizedGroups,
-          authorizedUsers: t.authorizedUsers,
-          strictBinding: t.strictBinding
+          authorizedUsers: t.authorizedUsers.map(u => ({
+            userId: u.userId,
+            fullName: u.fullName,
+            email: u.email,
+            mobileNumber: u.mobileNumber,
+            preferences: {
+              EMAIL: formVal.communicationRequired ? !!u.preferences?.EMAIL : false,
+              SMS: formVal.communicationRequired ? !!u.preferences?.SMS : false,
+              WHATSAPP: formVal.communicationRequired ? !!u.preferences?.WHATSAPP : false
+            }
+          })),
+          strictBinding: t.strictBinding ?? false
         }))
       }
     };
