@@ -49,7 +49,7 @@ export class CaseWorkspaceComponent implements OnInit {
   // Action Form fields
   showActionForm = false;
   actionCase: CaseWorkflow | null = null;
-  actionType = 'APPROVE';
+  actionType = '';
   actionNotes = '';
   isActioning = false;
   actionError = '';
@@ -199,7 +199,7 @@ export class CaseWorkspaceComponent implements OnInit {
     this.assignCase = null;
     this.actionCase = item;
     this.showActionForm = true;
-    this.actionType = 'APPROVE';
+    this.actionType = '';
     this.actionNotes = '';
     this.actionError = '';
     this.actionSuccess = '';

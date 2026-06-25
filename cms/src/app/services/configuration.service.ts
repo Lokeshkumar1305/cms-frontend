@@ -197,16 +197,16 @@ export class ConfigurationService {
     localStorage.setItem('mock_configs', JSON.stringify(this.mockConfigs));
   }
 
-  // Get configuration nodes filtered by product tenant (POST /api/cms/configuration/search)
-  getConfigurationsByProduct(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC', userId = 'system_admin'): Observable<any> {
+  // Get all configurations for a product tenant (POST /api/cms/configuration/getall)
+  getAllConfigurations(productId: string, page: number = 1, size: number = 10, sortField: string = 'createdDate', sortOrder: 'ASC' | 'DESC' = 'DESC', userId = 'system_admin'): Observable<any> {
     const headers = new HttpHeaders()
       .set('Content-Type', 'application/json')
       .set('X-User-Id', userId)
       .set('X-Product-Id', productId);
 
-    const payload = { criteriaList: [], page, size, sortField, sortOrder };
+    const payload = { page, size, sortField, sortOrder };
 
-    return this.http.post<any>(`${this.apiUrl}/search`, payload, { headers }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/getall`, payload, { headers }).pipe(
       map(res => {
         if (res && res.success && res.responseObject && Array.isArray(res.responseObject)) {
           for (const cfg of res.responseObject) {
@@ -219,7 +219,6 @@ export class ConfigurationService {
         console.warn('Backend API offline, utilizing mock configurations list.', err);
         const filtered = this.mockConfigs.filter(c => c.productId === productId);
 
-        // Sort
         const sorted = [...filtered].sort((a, b) => {
           const valA = (a as any)[sortField] || '';
           const valB = (b as any)[sortField] || '';
@@ -229,7 +228,6 @@ export class ConfigurationService {
           return 0;
         });
 
-        // Paginate
         const start = (page - 1) * size;
         const pageItems = sorted.slice(start, start + size);
 

@@ -245,7 +245,7 @@
               <!-- Recursive node template -->
               <ng-template #ctNodeTpl let-node="node" let-parentList="parentList" let-idx="idx" let-depth="depth" let-nodePath="nodePath">
                 <div class="ct-node">
-                  <div class="ct-node-card">
+                  <div class="ct-node-card" #nodeCard>
 
                     <!-- Path breadcrumb -->
                     <div class="d-flex align-items-center gap-1 flex-wrap mb-3">
@@ -290,7 +290,7 @@
                             <span style="font-size:11px; color:var(--shg-ink-600)">Comm. Required</span>
                             <mat-slide-toggle [(ngModel)]="node.communicationRequired" [ngModelOptions]="{standalone:true}" color="primary"></mat-slide-toggle>
                           </div>
-                          <button type="button" mat-stroked-button style="height:28px; font-size:11px; padding:0 10px; line-height:26px;" (click)="addNodeTier(node)">
+                          <button type="button" mat-stroked-button style="height:28px; font-size:11px; padding:0 10px; line-height:26px;" (click)="addNodeTier(node, nodeCard)">
                             <i class="bi bi-plus-lg me-1"></i>Tier
                           </button>
                         </div>
@@ -302,7 +302,7 @@
                       </div>
 
                       <div class="d-flex flex-column gap-3">
-                        <div *ngFor="let ntier of node.tiers; let ti = index" class="p-4 border rounded-3 bg-white">
+                        <div *ngFor="let ntier of node.tiers; let ti = index" class="node-tier-card p-4 border rounded-3 bg-white">
 
                           <!-- Tier header -->
                           <div class="d-flex align-items-center justify-content-between mb-3">
@@ -434,7 +434,8 @@
                             <div class="col-12">
                               <label class="field-label" style="font-size:11px; margin-bottom:4px">Hard SLA Action</label>
                               <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                                <mat-select [(ngModel)]="ntier.hardSlaAction" [ngModelOptions]="{standalone:true}" style="font-size:12px">
+                                <mat-select [(ngModel)]="ntier.hardSlaAction" [ngModelOptions]="{standalone:true}" style="font-size:12px" placeholder="Select action">
+                                  <mat-option value="">Select action</mat-option>
                                   <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
                                 </mat-select>
                               </mat-form-field>
@@ -709,7 +710,8 @@
                     <div class="col-12 col-sm-6">
                       <label class="field-label mb-1" style="font-size:11px;">Hard SLA Action</label>
                       <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                        <mat-select [(ngModel)]="tier.hardSlaAction" [ngModelOptions]="{standalone:true}">
+                        <mat-select [(ngModel)]="tier.hardSlaAction" [ngModelOptions]="{standalone:true}" placeholder="Select action">
+                          <mat-option value="">Select action</mat-option>
                           <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
                         </mat-select>
                       </mat-form-field>

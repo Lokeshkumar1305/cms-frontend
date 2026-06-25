@@ -89,7 +89,7 @@ export class CaseBuilderComponent implements OnInit {
   loadConfigurations(): void {
     if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
     this.isLoading = true;
-    this.configService.getConfigurationsByProduct(this.fetchProductId.trim(), this.page, this.size, this.sortField, this.sortOrder, this.fetchUserId.trim()).subscribe({
+    this.configService.getAllConfigurations(this.fetchProductId.trim(), this.page, this.size, this.sortField, this.sortOrder, this.fetchUserId.trim()).subscribe({
       next: (res) => {
         this.isLoading = false;
         this.configurations = res.responseObject || [];

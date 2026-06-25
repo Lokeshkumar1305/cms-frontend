@@ -137,7 +137,7 @@ export class CaseCreateComponent implements OnInit {
       softReminderMinutes: null,
       softReminderChannels: { EMAIL: false, SMS: false, WHATSAPP: false },
       hardSlaBreachMinutes: null,
-      hardSlaAction: 'ROTATE_ROUND_ROBIN',
+      hardSlaAction: '',
       newGroup: '', newUserId: '', newUserFullName: '',
       newUserEmail: '', newUserMobileNumber: '',
       newUserPrefEmail: false, newUserPrefSMS: false, newUserPrefWhatsApp: false
@@ -147,6 +147,7 @@ export class CaseCreateComponent implements OnInit {
   addApprovalTier(): void {
     this.approvalTiers.push(this.createBlankTierState());
     this.approvalTiersError = '';
+    this.scrollToLastTier('.approval-tier-card');
   }
 
   removeApprovalTier(i: number): void { this.approvalTiers.splice(i, 1); }
@@ -187,10 +188,17 @@ export class CaseCreateComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  addNodeTier(node: TreeNode): void {
+  addNodeTier(node: TreeNode, container?: HTMLElement): void {
     if (!node.tiers) node.tiers = [];
     node.tiers.push(this.createBlankTierState());
     this.cdr.detectChanges();
+    setTimeout(() => {
+      const scope = container ?? (this.el.nativeElement as HTMLElement);
+      const cards = scope.querySelectorAll('.node-tier-card');
+      if (cards.length > 0) {
+        cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 60);
   }
 
   removeNodeTier(node: TreeNode, i: number): void {
@@ -252,13 +260,31 @@ export class CaseCreateComponent implements OnInit {
     }, 60);
   }
 
+  private scrollToLastTier(selector: string): void {
+    setTimeout(() => {
+      const cards = (this.el.nativeElement as HTMLElement).querySelectorAll(selector);
+      if (cards.length > 0) {
+        cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 60);
+  }
+
   ngOnInit(): void {
     const navState = history.state as { config?: CaseConfiguration; mode?: string };
     if (navState?.mode === 'edit' && navState?.config) {
       this.editMode = true;
       this.editConfigId = navState.config.id;
       this.initForm();
+      // Prefill immediately from router state for fast render, then re-prefill
+      // from the inquiry API to guarantee all nested data (users, tiers) is complete.
       this.prefillForm(navState.config);
+      this.configService.inquireCaseConfiguration(navState.config.id, navState.config.productId).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe(res => {
+        if (res?.success && res?.responseObject) {
+          this.prefillForm(res.responseObject);
+        }
+      });
     } else {
       this.initForm();
       this.addApprovalTier();
@@ -377,6 +403,7 @@ export class CaseCreateComponent implements OnInit {
       newGroup: '', newUserId: '', newUserFullName: '', newUserEmail: '',
       newUserMobileNumber: '', newUserPrefEmail: false, newUserPrefSMS: false, newUserPrefWhatsApp: false
     } as ApprovalTierState));
+    this.cdr.detectChanges();
   }
 
   addTreeNodeChild(parent: TreeNode): void {

@@ -510,7 +510,8 @@
           <div class="field-group">
             <label class="field-label">Action <span style="color:#dc2626">*</span></label>
             <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-              <mat-select [(ngModel)]="actionType">
+              <mat-select [(ngModel)]="actionType" placeholder="Select action">
+                <mat-option value="">Select action</mat-option>
                 <mat-option value="APPROVE">APPROVE</mat-option>
                 <mat-option value="REJECT">REJECT</mat-option>
                 <mat-option value="ESCALATE">ESCALATE</mat-option>
