@@ -167,7 +167,7 @@
                   <span>Audit</span>
                 </button>
                 <button mat-flat-button color="primary" (click)="openActionForm(item)" class="audit-btn gap-1"
-                  *ngIf="item.status !== 'APPROVED_COMPLETED'">
+                  *ngIf="!item.hasActioned">
                   <i class="bi bi-check2-square"></i>
                   <span>Action</span>
                 </button>

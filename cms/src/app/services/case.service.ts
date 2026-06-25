@@ -44,6 +44,9 @@ export interface CaseWorkflow {
   externalMetadata?: CaseExternalMetadata;
   handOffContext?: CaseHandOffContext;
   escalated?: boolean;
+  isActionable?: boolean;
+  isReassignable?: boolean;
+  hasActioned?: boolean;
 }
 
 export interface CaseQueuePayload {
