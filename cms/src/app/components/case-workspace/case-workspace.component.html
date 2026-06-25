@@ -20,19 +20,12 @@
 
 <div *ngIf="activeProductId">
 
-  <!-- Active Tenant Banner -->
-  <div class="shg-tenant-banner d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 rounded-3 mb-4">
-    <div class="d-flex align-items-center gap-2">
-      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
-      <span class="shg-body m-0">Active Operator Tenant: <strong>{{ activeProductName }}</strong></span>
-    </div>
-    <div class="d-flex gap-2 align-items-center">
-      <span class="shg-mono px-3 py-1 rounded" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
-      <button mat-stroked-button color="primary" (click)="openIngestForm()" class="gap-1">
-        <i class="bi" [class.bi-plus-lg]="!showIngestForm" [class.bi-dash-lg]="showIngestForm"></i>
-        <span>Add Case</span>
-      </button>
-    </div>
+  <!-- Actions -->
+  <div class="d-flex justify-content-end mb-4">
+    <button mat-flat-button color="primary" (click)="openIngestForm()" class="gap-1 filter-btn">
+      <i class="bi" [class.bi-plus-lg]="!showIngestForm" [class.bi-dash-lg]="showIngestForm"></i>
+      <span>Add Case</span>
+    </button>
   </div>
 
   <!-- Fetch Bar -->

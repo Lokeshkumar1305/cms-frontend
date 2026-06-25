@@ -37,13 +37,6 @@
       <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
     </div>
 
-    <!-- Active Tenant Banner -->
-    <div class="shg-tenant-banner d-flex align-items-center gap-2 p-3 rounded-3 mb-4">
-      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
-      <span class="shg-body m-0">Active Tenant: <strong>{{ activeProductName }}</strong></span>
-      <span class="shg-mono px-3 py-1 rounded ms-auto"
-        style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
-    </div>
 
     <!-- Form -->
     <form [formGroup]="createForm" (ngSubmit)="onSubmit()" novalidate>
@@ -218,8 +211,8 @@
                   <div class="ct-root-body">
                     <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                       <span class="ct-depth-badge" style="background:rgba(37,99,235,0.1); color:#2563eb; border:1px solid rgba(37,99,235,0.25);">Root · Level 1</span>
-                      <span *ngIf="liveConfigPath" class="ct-depth-badge" style="background:rgba(22,163,74,0.08); color:#16a34a; border:1px solid rgba(22,163,74,0.2);">
-                        {{ totalDepth }} level{{ totalDepth !== 1 ? 's' : '' }} deep
+                      <span class="ct-depth-badge" style="background:rgba(22,163,74,0.08); color:#16a34a; border:1px solid rgba(22,163,74,0.2);">
+                        {{ liveConfigPath ? totalDepth : 0 }} level{{ (liveConfigPath ? totalDepth : 0) !== 1 ? 's' : '' }} deep
                       </span>
                       <span style="font-size:10px; color:var(--shg-ink-400)">Defined by Config Path &amp; Node Name fields above</span>
                     </div>
@@ -227,36 +220,40 @@
                       <code class="ct-path-chip" [class.ct-path-placeholder]="!liveConfigPath">
                         {{ liveConfigPath || 'Config Path' }}
                       </code>
-                      <i class="bi bi-chevron-right" style="font-size:10px; color:var(--shg-ink-300)"></i>
-                      <code class="ct-path-chip" [class.ct-path-placeholder]="!liveNodeName">
-                        {{ liveNodeName || 'Node Name' }}
-                      </code>
                     </div>
                   </div>
                   <button type="button" mat-flat-button color="primary" class="ct-add-root-btn" (click)="addRootChildNode()">
-                    <i class="bi bi-plus-lg me-1"></i> Add Level 1 Node
+                    <i class="bi bi-plus-lg me-1"></i> Add Level Node
                   </button>
                 </div>
 
                 <!-- Children list -->
                 <div class="ct-child-list" *ngIf="children.length > 0">
                   <ng-container *ngFor="let childNode of children; let childIdx = index">
-                    <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: childNode, parentList: children, idx: childIdx, depth: 1 }"></ng-container>
+                    <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: childNode, parentList: children, idx: childIdx, depth: 2, nodePath: [liveConfigPath] }"></ng-container>
                   </ng-container>
                 </div>
 
                 <!-- Empty state -->
                 <div *ngIf="children.length === 0" class="ct-empty-state">
                   <i class="bi bi-arrow-down-circle" style="font-size:20px; display:block; margin-bottom:8px;"></i>
-                  No sub-nodes yet. Click "+ Add Level 1 Node" to build the hierarchy.
+                  No sub-nodes yet. Click "+ Add Level Node" to build the hierarchy.
                 </div>
 
               </div>
 
               <!-- Recursive node template -->
-              <ng-template #ctNodeTpl let-node="node" let-parentList="parentList" let-idx="idx" let-depth="depth">
+              <ng-template #ctNodeTpl let-node="node" let-parentList="parentList" let-idx="idx" let-depth="depth" let-nodePath="nodePath">
                 <div class="ct-node">
                   <div class="ct-node-card">
+
+                    <!-- Path breadcrumb -->
+                    <div class="d-flex align-items-center gap-1 flex-wrap mb-3">
+                      <ng-container *ngFor="let seg of buildNodePath(nodePath, node.nodeName); let last = last">
+                        <code class="ct-path-chip" style="font-size:10px; padding:1px 7px;">{{ seg }}</code>
+                        <i *ngIf="!last" class="bi bi-chevron-right" style="font-size:9px; color:var(--shg-ink-300)"></i>
+                      </ng-container>
+                    </div>
 
                     <!-- Node header: depth badge + name input + action buttons -->
                     <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
@@ -264,7 +261,7 @@
                       <input type="text" class="ct-name-input flex-grow-1"
                         [(ngModel)]="node.nodeName" [ngModelOptions]="{standalone:true}"
                         (input)="cdr.detectChanges()"
-                        [placeholder]="'Node name, e.g. ' + (depth === 1 ? 'PERSONAL_LOAN' : depth === 2 ? 'UNSECURED' : 'SUB_NODE')" />
+                        [placeholder]="'Node name, e.g. ' + (depth === 2 ? 'PERSONAL_LOAN' : depth === 3 ? 'UNSECURED' : 'SUB_NODE')" />
                       <button type="button" class="ct-btn ct-btn-add" (click)="addTreeNodeChild(node)" title="Add child node under this node">
                         <i class="bi bi-plus-lg"></i><span>Child</span>
                       </button>
@@ -304,23 +301,23 @@
                         No approval tiers for this node
                       </div>
 
-                      <div class="d-flex flex-column gap-2">
-                        <div *ngFor="let ntier of node.tiers; let ti = index" class="p-3 border rounded-3 bg-white">
+                      <div class="d-flex flex-column gap-3">
+                        <div *ngFor="let ntier of node.tiers; let ti = index" class="p-4 border rounded-3 bg-white">
 
                           <!-- Tier header -->
-                          <div class="d-flex align-items-center justify-content-between mb-2">
+                          <div class="d-flex align-items-center justify-content-between mb-3">
                             <span class="tier-level-badge" style="font-size:10px; padding:2px 8px;">Level {{ ti + 1 }}</span>
                             <button type="button" class="btn btn-link p-0 text-danger" style="font-size:11px; text-decoration:none;" (click)="removeNodeTier(node, ti)">Remove</button>
                           </div>
 
                           <!-- Tier Name -->
-                          <mat-form-field appearance="outline" class="w-100 mb-2" subscriptSizing="dynamic">
+                          <mat-form-field appearance="outline" class="w-100 mb-3" subscriptSizing="dynamic">
                             <input matInput [(ngModel)]="ntier.tierName" [ngModelOptions]="{standalone:true}" placeholder="Tier name (e.g. Risk Officer)" style="font-size:12px" />
                           </mat-form-field>
 
                           <!-- Groups -->
-                          <div class="mb-2">
-                            <label class="field-label" style="font-size:10px; margin-bottom:4px">Authorized Groups</label>
+                          <div class="mb-3">
+                            <label class="field-label" style="font-size:11px; margin-bottom:6px">Authorized Groups</label>
                             <div class="d-flex flex-wrap gap-1 mb-1" *ngIf="ntier.authorizedGroups.length > 0">
                               <span *ngFor="let grp of ntier.authorizedGroups; let gj = index" class="group-chip">
                                 {{ grp }} <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromNodeTier(node, ti, gj)"></i>
@@ -335,11 +332,11 @@
                           </div>
 
                           <!-- Authorized Users -->
-                          <div class="mb-2">
-                            <label class="field-label" style="font-size:10px; margin-bottom:4px">Authorized Users</label>
+                          <div class="mb-3">
+                            <label class="field-label" style="font-size:11px; margin-bottom:6px">Authorized Users</label>
 
                             <!-- Users table -->
-                            <div class="table-responsive border rounded-3 bg-white mb-2" *ngIf="ntier.authorizedUsers.length > 0">
+                            <div class="table-responsive border rounded-3 bg-white mb-3" *ngIf="ntier.authorizedUsers.length > 0">
                               <table class="table table-sm table-borderless align-middle mb-0" style="font-size:12px">
                                 <thead class="table-light">
                                   <tr class="border-bottom">
@@ -376,9 +373,9 @@
                             </div>
 
                             <!-- Add user sub-form -->
-                            <div class="p-2 border rounded-3 bg-white">
-                              <div class="fw-bold mb-2 text-uppercase" style="font-size:9px; color:var(--shg-ink-500); letter-spacing:0.5px;">Add Authorized User</div>
-                              <div class="row g-2 mb-2">
+                            <div class="p-3 border rounded-3 bg-white">
+                              <div class="fw-semibold mb-3 text-uppercase" style="font-size:9px; color:var(--shg-ink-500); letter-spacing:0.5px;">Add Authorized User</div>
+                              <div class="row g-3 mb-3">
                                 <div class="col-6">
                                   <label class="field-label mb-1" style="font-size:10px;">User ID <span class="text-danger">*</span></label>
                                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
@@ -388,7 +385,7 @@
                                 <div class="col-6">
                                   <label class="field-label mb-1" style="font-size:10px;">Full Name</label>
                                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                                    <input matInput [(ngModel)]="ntier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Ramana Yadavalli" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                    <input matInput [(ngModel)]="ntier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Lokesh Kumar" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
                                   </mat-form-field>
                                 </div>
                                 <div class="col-6">
@@ -400,7 +397,7 @@
                                 <div class="col-6">
                                   <label class="field-label mb-1" style="font-size:10px;">Mobile Number</label>
                                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                                    <input matInput [(ngModel)]="ntier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                    <input matInput [(ngModel)]="ntier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" maxlength="10" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
                                   </mat-form-field>
                                 </div>
                               </div>
@@ -420,21 +417,22 @@
                           </div>
 
                           <!-- SLA fields -->
-                          <div class="row g-2 mt-1">
+                          <hr class="my-3" style="border-color:var(--shg-ink-200);" />
+                          <div class="row g-3">
                             <div class="col-6">
-                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Soft Reminder (min)</label>
+                              <label class="field-label" style="font-size:11px; margin-bottom:4px">Soft Reminder (min)</label>
                               <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                                 <input matInput type="number" [(ngModel)]="ntier.softReminderMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 30" style="font-size:12px" />
                               </mat-form-field>
                             </div>
                             <div class="col-6">
-                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Hard SLA Breach (min)</label>
+                              <label class="field-label" style="font-size:11px; margin-bottom:4px">Hard SLA Breach (min)</label>
                               <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                                 <input matInput type="number" [(ngModel)]="ntier.hardSlaBreachMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 60" style="font-size:12px" />
                               </mat-form-field>
                             </div>
                             <div class="col-12">
-                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Hard SLA Action</label>
+                              <label class="field-label" style="font-size:11px; margin-bottom:4px">Hard SLA Action</label>
                               <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                                 <mat-select [(ngModel)]="ntier.hardSlaAction" [ngModelOptions]="{standalone:true}" style="font-size:12px">
                                   <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
@@ -444,7 +442,7 @@
                           </div>
 
                           <!-- Strict Binding -->
-                          <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                          <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top">
                             <span style="font-size:11px; color:var(--shg-ink-600)">Strict Binding</span>
                             <mat-slide-toggle [(ngModel)]="ntier.strictBinding" [ngModelOptions]="{standalone:true}" color="primary"></mat-slide-toggle>
                           </div>
@@ -457,7 +455,7 @@
                   <!-- Recursive children -->
                   <div class="ct-child-list" *ngIf="node.children && node.children.length > 0">
                     <ng-container *ngFor="let cNode of node.children; let cIdx = index">
-                      <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: cNode, parentList: node.children, idx: cIdx, depth: depth + 1 }"></ng-container>
+                      <ng-container *ngTemplateOutlet="ctNodeTpl; context:{ node: cNode, parentList: node.children, idx: cIdx, depth: depth + 1, nodePath: buildNodePath(nodePath, node.nodeName) }"></ng-container>
                     </ng-container>
                   </div>
                 </div>
@@ -481,12 +479,9 @@
                   </mat-form-field>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="field-label">Fallback Admin Group ID <span style="color:#dc2626">*</span></label>
+                  <label class="field-label">Fallback Admin Group ID</label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                     <input matInput formControlName="fallbackAdminGroupId" placeholder="e.g. system_admin_group" />
-                    <mat-error *ngIf="createForm.get('fallbackAdminGroupId')?.hasError('required')">
-                      Fallback Admin Group is required
-                    </mat-error>
                   </mat-form-field>
                 </div>
               </div>
@@ -662,7 +657,7 @@
                         <div class="col-12 col-sm-6">
                           <label class="field-label mb-1" style="font-size:11px;">Full Name</label>
                           <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput [(ngModel)]="tier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Ramana Yadavalli" (keyup.enter)="addUserToTier(i)" />
+                            <input matInput [(ngModel)]="tier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Lokesh Kumar" (keyup.enter)="addUserToTier(i)" />
                           </mat-form-field>
                         </div>
                       </div>
@@ -670,13 +665,13 @@
                         <div class="col-12 col-sm-6">
                           <label class="field-label mb-1" style="font-size:11px;">Email</label>
                           <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput type="email" [(ngModel)]="tier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="e.g. ramana@toucanint.com" (keyup.enter)="addUserToTier(i)" />
+                            <input matInput type="email" [(ngModel)]="tier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="example@gmail.com" (keyup.enter)="addUserToTier(i)" />
                           </mat-form-field>
                         </div>
                         <div class="col-12 col-sm-6">
                           <label class="field-label mb-1" style="font-size:11px;">Mobile Number</label>
                           <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput [(ngModel)]="tier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" (keyup.enter)="addUserToTier(i)" />
+                            <input matInput [(ngModel)]="tier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" maxlength="10" (keyup.enter)="addUserToTier(i)" />
                           </mat-form-field>
                         </div>
                       </div>
@@ -718,14 +713,6 @@
                           <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
                         </mat-select>
                       </mat-form-field>
-                    </div>
-                    <div class="col-12 col-sm-6" *ngIf="createForm.get('communicationRequired')?.value">
-                      <label class="field-label mb-1" style="font-size:11px;">Soft Reminder Channels</label>
-                      <div class="d-flex gap-3 mt-1">
-                        <mat-checkbox [checked]="tier.softReminderChannels.EMAIL"    (change)="toggleTierChannel(i, 'EMAIL')"    color="primary" style="font-size:11px">EMAIL</mat-checkbox>
-                        <mat-checkbox [checked]="tier.softReminderChannels.SMS"      (change)="toggleTierChannel(i, 'SMS')"      color="primary" style="font-size:11px">SMS</mat-checkbox>
-                        <mat-checkbox [checked]="tier.softReminderChannels.WHATSAPP" (change)="toggleTierChannel(i, 'WHATSAPP')" color="primary" style="font-size:11px">WHATSAPP</mat-checkbox>
-                      </div>
                     </div>
                   </div>
 

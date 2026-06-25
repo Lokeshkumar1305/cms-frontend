@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -83,7 +83,7 @@ export class CaseCreateComponent implements OnInit {
     switch (step) {
       case 1: return ['productId', 'userId'].every(c => this.createForm.get(c)?.valid);
       case 2: return ['nodeName', 'configPath'].every(c => this.createForm.get(c)?.valid);
-      case 3: return ['fallbackAdminUserId', 'fallbackAdminGroupId'].every(c => this.createForm.get(c)?.valid);
+      case 3: return ['fallbackAdminUserId'].every(c => this.createForm.get(c)?.valid);
       case 4: {
         const f = this.createForm;
         if (!f.get('notifyEnabled')?.value) return false;
@@ -97,7 +97,7 @@ export class CaseCreateComponent implements OnInit {
   findInvalidStep(): number | null {
     const s1 = ['productId', 'userId'];
     const s2 = ['nodeName', 'configPath'];
-    const s3 = ['fallbackAdminUserId', 'fallbackAdminGroupId'];
+    const s3 = ['fallbackAdminUserId'];
     const s4 = ['notifyEnabled', 'notifyEmail', 'notifyMobile'];
 
     for (const ctrl of s1) { if (this.createForm.get(ctrl)?.invalid) return 1; }
@@ -123,6 +123,10 @@ export class CaseCreateComponent implements OnInit {
   }
 
   get totalDepth(): number { return this.maxTreeDepth + 1; }
+
+  buildNodePath(prefix: string[], nodeName: string): string[] {
+    return [...prefix, nodeName || '...'];
+  }
 
   approvalTiers: ApprovalTierState[] = [];
 
@@ -156,11 +160,6 @@ export class CaseCreateComponent implements OnInit {
   }
 
   removeGroupFromTier(i: number, j: number): void { this.approvalTiers[i].authorizedGroups.splice(j, 1); }
-
-  toggleTierChannel(i: number, ch: 'EMAIL' | 'SMS' | 'WHATSAPP'): void {
-    this.approvalTiers[i].softReminderChannels[ch] = !this.approvalTiers[i].softReminderChannels[ch];
-    this.cdr.detectChanges();
-  }
 
   addUserToTier(i: number): void {
     const tier = this.approvalTiers[i];
@@ -236,8 +235,22 @@ export class CaseCreateComponent implements OnInit {
     private router: Router,
     private configService: ConfigurationService,
     private tenantContext: TenantContextService,
-    public cdr: ChangeDetectorRef
+    public cdr: ChangeDetectorRef,
+    private el: ElementRef
   ) {}
+
+  private scrollTreeToBottom(): void {
+    setTimeout(() => {
+      const area: HTMLElement | null =
+        this.el.nativeElement.querySelector('.create-scroll-area') ??
+        document.querySelector('.create-scroll-area');
+      if (area) {
+        area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+    }, 60);
+  }
 
   ngOnInit(): void {
     const navState = history.state as { config?: CaseConfiguration; mode?: string };
@@ -275,9 +288,9 @@ export class CaseCreateComponent implements OnInit {
       userId:                 ['', [Validators.required]],
       configPath:             ['', [Validators.required]],
       nodeName:               ['', [Validators.required]],
-      currentDepthLevel:      [0],
+      currentDepthLevel:      [1],
       fallbackAdminUserId:    ['', [Validators.required]],
-      fallbackAdminGroupId:   ['', [Validators.required]],
+      fallbackAdminGroupId:   [''],
       notifyEnabled:          [false],
       notifyEmail:            ['', [Validators.email, Validators.pattern(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/)]],
       notifyMobile:           ['', [Validators.pattern(/^[6-9]\d{9}$/), Validators.maxLength(10)]],
@@ -373,14 +386,16 @@ export class CaseCreateComponent implements OnInit {
       requiresCustomWorkflow: false, workflowKey: '', children: []
     });
     this.cdr.detectChanges();
+    this.scrollTreeToBottom();
   }
 
   addRootChildNode(): void {
     this.children.push({
-      nodeName: '', currentDepthLevel: 1,
+      nodeName: '', currentDepthLevel: 2,
       requiresCustomWorkflow: false, workflowKey: '', children: []
     });
     this.cdr.detectChanges();
+    this.scrollTreeToBottom();
   }
 
   removeTreeNode(parentList: TreeNode[], idx: number): void {
@@ -432,10 +447,11 @@ export class CaseCreateComponent implements OnInit {
   private buildChildren(nodes: TreeNode[]): any[] {
     return nodes.map(n => {
       const child: any = {
-        nodeName:          n.nodeName,
-        currentDepthLevel: n.currentDepthLevel,
-        workflowKey:       n.workflowKey || '',
-        children:          this.buildChildren(n.children || [])
+        nodeName:               n.nodeName,
+        currentDepthLevel:      n.currentDepthLevel,
+        requiresCustomWorkflow: n.requiresCustomWorkflow,
+        workflowKey:            n.workflowKey || '',
+        children:               this.buildChildren(n.children || [])
       };
       if (n.requiresCustomWorkflow && n.tiers && n.tiers.length > 0) {
         const commRequired = n.communicationRequired ?? false;
@@ -491,7 +507,8 @@ export class CaseCreateComponent implements OnInit {
     const payload = {
       configPath:              formVal.configPath,
       nodeName:                formVal.nodeName,
-      currentDepthLevel:       0,
+      currentDepthLevel:       1,
+      requiresCustomWorkflow:  this.approvalTiers.length > 0,
       workflowKey:             '',
       fallbackAdminUserId:     formVal.fallbackAdminUserId,
       fallbackAdminGroupId:    formVal.fallbackAdminGroupId,

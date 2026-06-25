@@ -30,13 +30,8 @@
     <span class="shg-caption m-0 fw-semibold">{{ errorMessage }}</span>
   </div>
 
-  <!-- Active Tenant Banner + Actions -->
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
-    <div class="shg-tenant-banner d-flex align-items-center gap-2 p-3 rounded-3 flex-grow-1">
-      <i class="bi bi-info-circle-fill" style="color:var(--shg-info)"></i>
-      <span class="shg-body m-0">Active Tenant: <strong>{{ activeProductName }}</strong></span>
-      <span class="shg-mono px-3 py-1 rounded ms-auto" style="background:var(--shg-primary); color:#fff; font-size:11px;">{{ activeProductId }}</span>
-    </div>
+  <!-- Actions -->
+  <div class="d-flex justify-content-end mb-4">
     <button mat-flat-button color="primary" routerLink="/case-config/create" class="gap-1 filter-btn">
       <i class="bi bi-plus-lg"></i>
       <span>New Configuration</span>
