@@ -98,8 +98,8 @@
               <ng-template #n3>3</ng-template>
             </div>
             <div class="step-details">
-              <div class="step-title fw-bold">Escalation & Fallbacks</div>
-              <div class="step-caption text-muted mt-1">Strategy & admin options</div>
+              <div class="step-title fw-bold">Fallbacks</div>
+              <div class="step-caption text-muted mt-1">Fallback admin settings</div>
             </div>
           </div>
 
@@ -196,51 +196,6 @@
                 </div>
               </div>
 
-              <div class="field-group mb-4">
-                <label class="field-label">Root Workflow Key</label>
-
-                <!-- Uploaded state -->
-                <div *ngIf="rootBpmnFileName && rootBpmnFileName !== 'Uploading...'"
-                  class="d-flex align-items-center gap-2 p-2 rounded-2 border"
-                  style="background:rgba(22,163,74,0.06); border-color:rgba(22,163,74,0.3) !important;">
-                  <i class="bi bi-file-earmark-check-fill" style="color:#16a34a; font-size:16px; flex-shrink:0"></i>
-                  <span class="shg-mono fw-semibold flex-grow-1" style="font-size:12px; color:var(--shg-ink-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ rootBpmnFileName }}</span>
-                  <label for="root-bpmn-reupload" class="mb-0 cursor-pointer d-flex align-items-center gap-1 px-2 py-1 rounded border"
-                    style="font-size:11px; font-weight:600; color:var(--shg-primary); border-color:var(--shg-primary) !important; white-space:nowrap; cursor:pointer;">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Re-upload</span>
-                    <input id="root-bpmn-reupload" type="file" accept=".bpmn,.xml" style="display:none" (change)="onRootBpmnSelect($event)" />
-                  </label>
-                  <button type="button" class="d-flex align-items-center gap-1 px-2 py-1 rounded border mb-0"
-                    style="font-size:11px; font-weight:600; color:#dc2626; border-color:rgba(220,38,38,0.4) !important; background:transparent; cursor:pointer;"
-                    (click)="clearRootBpmn()">
-                    <i class="bi bi-trash3"></i>
-                    <span>Delete</span>
-                  </button>
-                </div>
-
-                <!-- Uploading state -->
-                <div *ngIf="rootBpmnUploading"
-                  class="d-flex align-items-center gap-2 p-2 rounded-2 border"
-                  style="background:rgba(37,99,235,0.06); border-color:rgba(37,99,235,0.3) !important;">
-                  <mat-spinner diameter="14"></mat-spinner>
-                  <span class="shg-caption" style="color:var(--shg-ink-500)">Uploading BPMN file...</span>
-                </div>
-
-                <!-- No file state -->
-                <div *ngIf="!rootBpmnFileName" class="d-flex align-items-center gap-2">
-                  <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                    <input matInput formControlName="workflowKey" placeholder="e.g. universal-case-flow" />
-                  </mat-form-field>
-                  <label for="root-bpmn-upload" class="upload-bpmn-btn mb-0 p-2 border rounded cursor-pointer text-center bg-light"
-                    style="font-size:12px; height:38px; display:flex; align-items:center; gap:4px; border-color:var(--shg-ink-200) !important; white-space:nowrap;">
-                    <i class="bi bi-upload"></i>
-                    <span style="font-weight:500;">Upload BPMN</span>
-                    <input id="root-bpmn-upload" type="file" accept=".bpmn,.xml" style="display:none" (change)="onRootBpmnSelect($event)" />
-                  </label>
-                </div>
-              </div>
-
               <mat-divider class="mb-4"></mat-divider>
 
               <!-- Tree Nodes Hierarchy — redesigned -->
@@ -318,39 +273,182 @@
                       </button>
                     </div>
 
-                    <!-- Workflow Key / BPMN row -->
-                    <div class="ct-workflow-row">
-                      <span class="ct-workflow-label">Workflow Key</span>
+                    <!-- Requires Custom Workflow toggle -->
+                    <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                      <div>
+                        <span style="font-size:11px; font-weight:600; color:var(--shg-ink-700)">Requires Custom Workflow</span>
+                        <span class="d-block" style="font-size:10px; color:var(--shg-ink-400)">Enable to configure per-node approval settings</span>
+                      </div>
+                      <mat-slide-toggle [checked]="node.requiresCustomWorkflow" (change)="toggleNodeCustomWorkflow(node)" color="primary"></mat-slide-toggle>
+                    </div>
 
-                      <!-- Uploaded -->
-                      <div *ngIf="node.bpmnFileName && node.bpmnFileName !== 'Uploading...'" class="ct-bpmn-uploaded">
-                        <i class="bi bi-file-earmark-check-fill" style="color:#16a34a; font-size:13px; flex-shrink:0"></i>
-                        <span class="ct-bpmn-filename">{{ node.bpmnFileName }}</span>
-                        <label [attr.for]="'bpmn-reup-'+depth+'-'+idx" class="ct-bpmn-action-btn reup" title="Re-upload BPMN">
-                          <i class="bi bi-arrow-repeat"></i>
-                          <input [id]="'bpmn-reup-'+depth+'-'+idx" type="file" accept=".bpmn,.xml" style="display:none" (change)="onTreeNodeBpmnSelect($event, node)" />
-                        </label>
-                        <button type="button" class="ct-bpmn-action-btn del" (click)="clearNodeBpmn(node)" title="Remove BPMN">
-                          <i class="bi bi-trash3"></i>
-                        </button>
+                    <!-- Per-node approval settings (shown when requiresCustomWorkflow is true) -->
+                    <div *ngIf="node.requiresCustomWorkflow" class="mt-3 p-3 border rounded-3" style="background:rgba(37,99,235,0.03); border-color:rgba(37,99,235,0.2) !important;">
+                      <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--shg-primary)">
+                          <i class="bi bi-shield-check me-1"></i>Node Approval Settings
+                        </span>
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="d-flex align-items-center gap-2">
+                            <span style="font-size:11px; color:var(--shg-ink-600)">Comm. Required</span>
+                            <mat-slide-toggle [(ngModel)]="node.communicationRequired" [ngModelOptions]="{standalone:true}" color="primary"></mat-slide-toggle>
+                          </div>
+                          <button type="button" mat-stroked-button style="height:28px; font-size:11px; padding:0 10px; line-height:26px;" (click)="addNodeTier(node)">
+                            <i class="bi bi-plus-lg me-1"></i>Tier
+                          </button>
+                        </div>
                       </div>
 
-                      <!-- Uploading -->
-                      <div *ngIf="node.bpmnFileName === 'Uploading...'" class="ct-bpmn-uploading">
-                        <mat-spinner diameter="12"></mat-spinner>
-                        <span>Uploading...</span>
+                      <div *ngIf="!node.tiers || node.tiers.length === 0" class="text-center py-2 mb-0"
+                        style="color:var(--shg-ink-300); font-size:11px; border:1px dashed var(--shg-ink-200); border-radius:6px">
+                        No approval tiers for this node
                       </div>
 
-                      <!-- No file -->
-                      <div *ngIf="!node.bpmnFileName" class="ct-bpmn-none">
-                        <input type="text" class="ct-workflow-input"
-                          [(ngModel)]="node.workflowKey" [ngModelOptions]="{standalone:true}"
-                          (input)="cdr.detectChanges()"
-                          placeholder="e.g. special-mortgage-flow (optional)" />
-                        <label [attr.for]="'bpmn-tree-'+depth+'-'+idx" class="ct-upload-lbl">
-                          <i class="bi bi-upload"></i> BPMN
-                          <input [id]="'bpmn-tree-'+depth+'-'+idx" type="file" accept=".bpmn,.xml" style="display:none" (change)="onTreeNodeBpmnSelect($event, node)" />
-                        </label>
+                      <div class="d-flex flex-column gap-2">
+                        <div *ngFor="let ntier of node.tiers; let ti = index" class="p-3 border rounded-3 bg-white">
+
+                          <!-- Tier header -->
+                          <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="tier-level-badge" style="font-size:10px; padding:2px 8px;">Level {{ ti + 1 }}</span>
+                            <button type="button" class="btn btn-link p-0 text-danger" style="font-size:11px; text-decoration:none;" (click)="removeNodeTier(node, ti)">Remove</button>
+                          </div>
+
+                          <!-- Tier Name -->
+                          <mat-form-field appearance="outline" class="w-100 mb-2" subscriptSizing="dynamic">
+                            <input matInput [(ngModel)]="ntier.tierName" [ngModelOptions]="{standalone:true}" placeholder="Tier name (e.g. Risk Officer)" style="font-size:12px" />
+                          </mat-form-field>
+
+                          <!-- Groups -->
+                          <div class="mb-2">
+                            <label class="field-label" style="font-size:10px; margin-bottom:4px">Authorized Groups</label>
+                            <div class="d-flex flex-wrap gap-1 mb-1" *ngIf="ntier.authorizedGroups.length > 0">
+                              <span *ngFor="let grp of ntier.authorizedGroups; let gj = index" class="group-chip">
+                                {{ grp }} <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromNodeTier(node, ti, gj)"></i>
+                              </span>
+                            </div>
+                            <div class="d-flex gap-2">
+                              <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                                <input matInput [(ngModel)]="ntier.newGroup" [ngModelOptions]="{standalone:true}" placeholder="e.g. RISK_OFFICERS_GP" (keyup.enter)="addGroupToNodeTier(node, ti)" style="font-size:12px" />
+                              </mat-form-field>
+                              <button type="button" mat-stroked-button style="height:38px; font-size:11px;" (click)="addGroupToNodeTier(node, ti)">Add</button>
+                            </div>
+                          </div>
+
+                          <!-- Authorized Users -->
+                          <div class="mb-2">
+                            <label class="field-label" style="font-size:10px; margin-bottom:4px">Authorized Users</label>
+
+                            <!-- Users table -->
+                            <div class="table-responsive border rounded-3 bg-white mb-2" *ngIf="ntier.authorizedUsers.length > 0">
+                              <table class="table table-sm table-borderless align-middle mb-0" style="font-size:12px">
+                                <thead class="table-light">
+                                  <tr class="border-bottom">
+                                    <th class="ps-3 py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">User ID</th>
+                                    <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Full Name</th>
+                                    <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Contact</th>
+                                    <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;" *ngIf="node.communicationRequired">Prefs</th>
+                                    <th class="py-2 text-end pe-3 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr *ngFor="let nusr of ntier.authorizedUsers; let uj = index" class="border-bottom-0">
+                                    <td class="ps-3 py-2 fw-semibold" style="color:var(--shg-ink-900); font-size:11px;">{{ nusr.userId }}</td>
+                                    <td class="py-2 text-dark" style="font-size:11px;">{{ nusr.fullName || '-' }}</td>
+                                    <td class="py-2 text-muted">
+                                      <div *ngIf="nusr.email" style="font-size:10px;"><i class="bi bi-envelope me-1"></i>{{ nusr.email }}</div>
+                                      <div *ngIf="nusr.mobileNumber" style="font-size:10px;"><i class="bi bi-phone me-1"></i>{{ nusr.mobileNumber }}</div>
+                                    </td>
+                                    <td class="py-2" *ngIf="node.communicationRequired">
+                                      <div class="d-flex gap-1 flex-wrap">
+                                        <span class="badge bg-light text-dark border" style="font-size:9px; padding:2px 5px;" *ngIf="nusr.preferences?.EMAIL">EMAIL</span>
+                                        <span class="badge bg-light text-dark border" style="font-size:9px; padding:2px 5px;" *ngIf="nusr.preferences?.SMS">SMS</span>
+                                        <span class="badge bg-light text-dark border" style="font-size:9px; padding:2px 5px;" *ngIf="nusr.preferences?.WHATSAPP">WA</span>
+                                      </div>
+                                    </td>
+                                    <td class="py-2 text-end pe-3">
+                                      <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0" (click)="removeUserFromNodeTier(node, ti, uj)" title="Remove user">
+                                        <i class="bi bi-trash-fill fs-6"></i>
+                                      </button>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <!-- Add user sub-form -->
+                            <div class="p-2 border rounded-3 bg-white">
+                              <div class="fw-bold mb-2 text-uppercase" style="font-size:9px; color:var(--shg-ink-500); letter-spacing:0.5px;">Add Authorized User</div>
+                              <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                  <label class="field-label mb-1" style="font-size:10px;">User ID <span class="text-danger">*</span></label>
+                                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                    <input matInput [(ngModel)]="ntier.newUserId" [ngModelOptions]="{standalone:true}" placeholder="e.g. retail_agent_01" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                  </mat-form-field>
+                                </div>
+                                <div class="col-6">
+                                  <label class="field-label mb-1" style="font-size:10px;">Full Name</label>
+                                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                    <input matInput [(ngModel)]="ntier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Ramana Yadavalli" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                  </mat-form-field>
+                                </div>
+                                <div class="col-6">
+                                  <label class="field-label mb-1" style="font-size:10px;">Email</label>
+                                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                    <input matInput type="email" [(ngModel)]="ntier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="e.g. user@example.com" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                  </mat-form-field>
+                                </div>
+                                <div class="col-6">
+                                  <label class="field-label mb-1" style="font-size:10px;">Mobile Number</label>
+                                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                    <input matInput [(ngModel)]="ntier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" (keyup.enter)="addUserToNodeTier(node, ti)" style="font-size:12px" />
+                                  </mat-form-field>
+                                </div>
+                              </div>
+                              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2 border-top">
+                                <div class="d-flex gap-2 align-items-center flex-wrap" *ngIf="node.communicationRequired">
+                                  <span class="field-label mb-0" style="font-size:10px;">Preferences:</span>
+                                  <mat-checkbox [(ngModel)]="ntier.newUserPrefEmail"    [ngModelOptions]="{standalone:true}" color="primary" style="font-size:10px">EMAIL</mat-checkbox>
+                                  <mat-checkbox [(ngModel)]="ntier.newUserPrefSMS"      [ngModelOptions]="{standalone:true}" color="primary" style="font-size:10px">SMS</mat-checkbox>
+                                  <mat-checkbox [(ngModel)]="ntier.newUserPrefWhatsApp" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:10px">WHATSAPP</mat-checkbox>
+                                </div>
+                                <span *ngIf="!node.communicationRequired"></span>
+                                <button type="button" mat-flat-button color="primary" style="height:28px; font-size:10px; font-weight:600; padding:0 10px;" (click)="addUserToNodeTier(node, ti)" [disabled]="!ntier.newUserId.trim()">
+                                  Add User
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- SLA fields -->
+                          <div class="row g-2 mt-1">
+                            <div class="col-6">
+                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Soft Reminder (min)</label>
+                              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                <input matInput type="number" [(ngModel)]="ntier.softReminderMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 30" style="font-size:12px" />
+                              </mat-form-field>
+                            </div>
+                            <div class="col-6">
+                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Hard SLA Breach (min)</label>
+                              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                <input matInput type="number" [(ngModel)]="ntier.hardSlaBreachMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 60" style="font-size:12px" />
+                              </mat-form-field>
+                            </div>
+                            <div class="col-12">
+                              <label class="field-label" style="font-size:10px; margin-bottom:2px">Hard SLA Action</label>
+                              <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                                <mat-select [(ngModel)]="ntier.hardSlaAction" [ngModelOptions]="{standalone:true}" style="font-size:12px">
+                                  <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
+                                </mat-select>
+                              </mat-form-field>
+                            </div>
+                          </div>
+
+                          <!-- Strict Binding -->
+                          <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                            <span style="font-size:11px; color:var(--shg-ink-600)">Strict Binding</span>
+                            <mat-slide-toggle [(ngModel)]="ntier.strictBinding" [ngModelOptions]="{standalone:true}" color="primary"></mat-slide-toggle>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -365,39 +463,16 @@
                 </div>
               </ng-template>
 
-              <mat-divider class="mb-4"></mat-divider>
-              <div class="form-section-label">SLA Settings</div>
-              <div class="row g-3 mb-0">
-                <div class="col-12">
-                  <label class="field-label">SLA Timeout (minutes) <span style="color:#dc2626">*</span></label>
-                  <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput type="number" formControlName="globalSlaTimeoutMinutes" placeholder="e.g. 1440 (24 hours)" />
-                    <mat-error *ngIf="createForm.get('globalSlaTimeoutMinutes')?.hasError('required')">
-                      SLA timeout is required
-                    </mat-error>
-                  </mat-form-field>
-                </div>
-              </div>
             </mat-card>
           </div>
 
           <!-- Step 3 Content -->
           <div class="step-panel animate-fade" *ngIf="activeStep === 3">
             <mat-card class="form-section-card p-4">
-              <div class="form-section-label">Escalation & Fallback Settings</div>
-              <div class="field-group mb-3">
-                <label class="field-label">Hard Escalation Mode <span style="color:#dc2626">*</span></label>
-                <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                  <mat-select formControlName="hardEscalationMode">
-                    <mat-option value="DIRECT_TO_ADMIN">Direct to Admin</mat-option>
-                    <mat-option value="ROUND_ROBIN">Round Robin</mat-option>
-                    <mat-option value="RANDOM">Random</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
+              <div class="form-section-label">Fallback Settings</div>
               <div class="row g-3">
                 <div class="col-12 col-md-6">
-                  <label class="field-label">Fallback Admin User <span style="color:#dc2626">*</span></label>
+                  <label class="field-label">Fallback Admin User ID <span style="color:#dc2626">*</span></label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
                     <input matInput formControlName="fallbackAdminUserId" placeholder="e.g. system_user" />
                     <mat-error *ngIf="createForm.get('fallbackAdminUserId')?.hasError('required')">
@@ -406,9 +481,9 @@
                   </mat-form-field>
                 </div>
                 <div class="col-12 col-md-6">
-                  <label class="field-label">Fallback Admin Group</label>
+                  <label class="field-label">Fallback Admin Group ID <span style="color:#dc2626">*</span></label>
                   <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                    <input matInput formControlName="fallbackAdminGroupId" placeholder="e.g. system_user" />
+                    <input matInput formControlName="fallbackAdminGroupId" placeholder="e.g. system_admin_group" />
                     <mat-error *ngIf="createForm.get('fallbackAdminGroupId')?.hasError('required')">
                       Fallback Admin Group is required
                     </mat-error>
@@ -620,8 +695,42 @@
                     </div>
                   </div>
 
+                  <!-- SLA Settings -->
+                  <mat-divider class="my-3"></mat-divider>
+                  <div class="fw-bold mb-2 text-uppercase" style="font-size:10px; color:var(--shg-ink-500); letter-spacing:0.5px">SLA Settings</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-12 col-sm-6">
+                      <label class="field-label mb-1" style="font-size:11px;">Soft Reminder (minutes)</label>
+                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                        <input matInput type="number" [(ngModel)]="tier.softReminderMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 30" />
+                      </mat-form-field>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label class="field-label mb-1" style="font-size:11px;">Hard SLA Breach (minutes)</label>
+                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                        <input matInput type="number" [(ngModel)]="tier.hardSlaBreachMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 60" />
+                      </mat-form-field>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label class="field-label mb-1" style="font-size:11px;">Hard SLA Action</label>
+                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                        <mat-select [(ngModel)]="tier.hardSlaAction" [ngModelOptions]="{standalone:true}">
+                          <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="col-12 col-sm-6" *ngIf="createForm.get('communicationRequired')?.value">
+                      <label class="field-label mb-1" style="font-size:11px;">Soft Reminder Channels</label>
+                      <div class="d-flex gap-3 mt-1">
+                        <mat-checkbox [checked]="tier.softReminderChannels.EMAIL"    (change)="toggleTierChannel(i, 'EMAIL')"    color="primary" style="font-size:11px">EMAIL</mat-checkbox>
+                        <mat-checkbox [checked]="tier.softReminderChannels.SMS"      (change)="toggleTierChannel(i, 'SMS')"      color="primary" style="font-size:11px">SMS</mat-checkbox>
+                        <mat-checkbox [checked]="tier.softReminderChannels.WHATSAPP" (change)="toggleTierChannel(i, 'WHATSAPP')" color="primary" style="font-size:11px">WHATSAPP</mat-checkbox>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Strict Binding -->
-                  <div class="d-flex align-items-center justify-content-between mt-1">
+                  <div class="d-flex align-items-center justify-content-between mt-2">
                     <span class="field-label mb-0">Strict binding</span>
                     <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}"
                       color="primary"></mat-slide-toggle>
@@ -645,10 +754,12 @@
      ========================================================= -->
 <div class="create-action-footer" *ngIf="activeProductId">
   <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
-  <button mat-stroked-button type="button" *ngIf="activeStep > 1" (click)="prevStep()">Back</button>
-  <button mat-flat-button color="primary" type="button" *ngIf="activeStep < 5" (click)="nextStep()">Next</button>
-  <button mat-flat-button color="primary" type="button" *ngIf="activeStep === 5" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
-    <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
-    <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
-  </button>
+  <div class="footer-nav-actions">
+    <button mat-stroked-button type="button" *ngIf="activeStep > 1" (click)="prevStep()">Back</button>
+    <button mat-flat-button color="primary" type="button" *ngIf="activeStep < 5" (click)="nextStep()">Next</button>
+    <button mat-flat-button color="primary" type="button" *ngIf="activeStep === 5" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
+      <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
+      <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
+    </button>
+  </div>
 </div>

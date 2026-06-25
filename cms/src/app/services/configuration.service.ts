@@ -29,6 +29,10 @@ export interface ApprovalTier {
   authorizedGroups: string[];
   authorizedUsers: UserDefinition[];
   strictBinding: boolean;
+  softReminderMinutes?: number;
+  softReminderChannels?: CommunicationChannel[];
+  hardSlaBreachMinutes?: number;
+  hardSlaAction?: string;
 }
 
 export interface ApprovalSettings {
@@ -51,8 +55,10 @@ export interface NotificationSettings {
 export interface CaseConfigurationChild {
   nodeName: string;
   currentDepthLevel: number;
+  requiresCustomWorkflow?: boolean;
   workflowKey: string;
   children: CaseConfigurationChild[];
+  approvalSettings?: ApprovalSettings;
 }
 
 export interface CaseConfiguration {
@@ -62,14 +68,15 @@ export interface CaseConfiguration {
   nodeName: string;
   parentConfigurationId?: string | null;
   currentDepthLevel: number;
-  globalSlaTimeoutMinutes: number;
+  requiresCustomWorkflow?: boolean;
+  globalSlaTimeoutMinutes?: number;
   fallbackAdminUserId: string;
   fallbackAdminGroupId: string;
   workflowKey: string;
   children?: CaseConfigurationChild[];
   approvalSettings: ApprovalSettings;
   notificationSettings: NotificationSettings;
-  escalationStrategySettings: EscalationStrategySettings;
+  escalationStrategySettings?: EscalationStrategySettings;
   createdDate: string;
   lastModifiedDate: string;
   modifiedByUser: string;
