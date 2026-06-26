@@ -3,6 +3,60 @@
   border-radius: 12px !important;
 }
 
+// ── Case Workspace Tabs ────────────────────────────────────────────────────────
+.cw-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--shg-ink-100, #e5e7eb);
+  padding-bottom: 0;
+}
+
+.cw-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--shg-ink-500, #6b7280);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  border-radius: 0;
+  transition: color 0.15s, border-color 0.15s;
+
+  i { font-size: 13px; }
+
+  .cw-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    background: var(--shg-ink-100, #f3f4f6);
+    color: var(--shg-ink-500, #6b7280);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  &:hover {
+    color: var(--shg-primary, #2563eb);
+    .cw-tab-badge { background: rgba(37,99,235,0.1); color: var(--shg-primary, #2563eb); }
+  }
+
+  &.active {
+    color: var(--shg-primary, #2563eb);
+    font-weight: 600;
+    border-bottom-color: var(--shg-primary, #2563eb);
+    .cw-tab-badge { background: rgba(37,99,235,0.12); color: var(--shg-primary, #2563eb); }
+  }
+}
+
 .shg-tenant-banner {
   background-color: rgba(37, 99, 235, 0.06);
   border: 1px solid rgba(37, 99, 235, 0.15);

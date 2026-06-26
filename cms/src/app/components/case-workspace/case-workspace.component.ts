@@ -20,6 +20,11 @@ export class CaseWorkspaceComponent implements OnInit {
 
   displayedColumns = ['caseId', 'configPath', 'currentLevel', 'status', 'createdDate', 'lastModifiedDate', 'actions'];
 
+  // Tabs
+  activeTab: 'pending' | 'completed' = 'pending';
+  pendingCount  = 0;
+  completedCount = 0;
+
   // Data Queue
   casesQueue: CaseWorkflow[] = [];
   totalCount = 0;
@@ -112,6 +117,12 @@ export class CaseWorkspaceComponent implements OnInit {
     this.loadQueue();
   }
 
+  switchTab(tab: 'pending' | 'completed'): void {
+    this.activeTab = tab;
+    this.page = 1;
+    this.loadQueue();
+  }
+
   loadQueue(): void {
     if (!this.fetchProductId.trim()) return;
     this.isLoading = true;
@@ -126,21 +137,19 @@ export class CaseWorkspaceComponent implements OnInit {
       next: (res) => {
         this.isLoading = false;
         const obj = res?.responseObject || {};
-        // Each queue is { totalCount, data: [...] }
         const extract = (queue: any): CaseWorkflow[] =>
           (queue?.data || []).map((c: any) => ({ ...c, escalated: c.isEscalated }));
 
-        this.casesQueue = [
-          ...extract(obj.userPending),
-          ...extract(obj.userCompleted),
-          ...extract(obj.groupPending),
-          ...extract(obj.groupCompleted),
-        ];
-        this.totalCount =
-          (obj.userPending?.totalCount    || 0) +
-          (obj.userCompleted?.totalCount  || 0) +
-          (obj.groupPending?.totalCount   || 0) +
-          (obj.groupCompleted?.totalCount || 0);
+        this.pendingCount   = (obj.userPending?.totalCount  || 0) + (obj.groupPending?.totalCount  || 0);
+        this.completedCount = (obj.userCompleted?.totalCount || 0) + (obj.groupCompleted?.totalCount || 0);
+
+        if (this.activeTab === 'pending') {
+          this.casesQueue = [...extract(obj.userPending), ...extract(obj.groupPending)];
+          this.totalCount = this.pendingCount;
+        } else {
+          this.casesQueue = [...extract(obj.userCompleted), ...extract(obj.groupCompleted)];
+          this.totalCount = this.completedCount;
+        }
       },
       error: () => (this.isLoading = false)
     });

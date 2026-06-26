@@ -67,6 +67,20 @@
     </div>
   </mat-card>
 
+  <!-- Tabs -->
+  <div class="cw-tabs mb-3">
+    <button class="cw-tab" [class.active]="activeTab === 'pending'" (click)="switchTab('pending')">
+      <i class="bi bi-hourglass-split"></i>
+      Pending
+      <span class="cw-tab-badge">{{ pendingCount }}</span>
+    </button>
+    <button class="cw-tab" [class.active]="activeTab === 'completed'" (click)="switchTab('completed')">
+      <i class="bi bi-check-circle"></i>
+      Completed
+      <span class="cw-tab-badge">{{ completedCount }}</span>
+    </button>
+  </div>
+
   <!-- Queue Table + Detail Drawer -->
   <div class="row g-4">
 
