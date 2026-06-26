@@ -1,6 +1,6 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CaseService, CaseWorkflow, CaseQueuePayload } from '../../services/case.service';
+import { CaseService, CaseWorkflow } from '../../services/case.service';
 import { TenantContextService } from '../../services/tenant-context.service';
 import { Sort } from '@angular/material/sort';
 
@@ -76,16 +76,24 @@ export class CaseWorkspaceComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Restore last-used fetch credentials so the table auto-loads on revisit
+    const savedUser  = localStorage.getItem('cw_fetchUserId')  || '';
+    const savedGroup = localStorage.getItem('cw_fetchGroupId') || '';
+    if (savedUser)  this.fetchUserId      = savedUser;
+    if (savedGroup) this.workspaceGroupId = savedGroup;
+
     this.tenantContext.activeTenant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tenant => {
       if (tenant) {
-        this.activeProductId = tenant.productId;
+        this.activeProductId  = tenant.productId;
         this.activeProductName = tenant.productName;
-        this.ingestProductId = tenant.productId;
-        if (!this.fetchProductId) this.fetchProductId = tenant.productId;
+        this.ingestProductId  = tenant.productId;
+        this.fetchProductId   = tenant.productId;
+        this.dataFetched = true;
+        this.loadQueue();
       } else {
-        this.activeProductId = '';
+        this.activeProductId  = '';
         this.activeProductName = '';
-        this.ingestProductId = '';
+        this.ingestProductId  = '';
         this.casesQueue = [];
         this.totalCount = 0;
         this.dataFetched = false;
@@ -95,31 +103,44 @@ export class CaseWorkspaceComponent implements OnInit {
   }
 
   fetchData(): void {
-    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
+    if (!this.fetchProductId.trim()) return;
+    // Persist credentials for next visit
+    localStorage.setItem('cw_fetchUserId',  this.fetchUserId.trim());
+    localStorage.setItem('cw_fetchGroupId', this.workspaceGroupId.trim());
     this.page = 1;
     this.dataFetched = true;
     this.loadQueue();
   }
 
   loadQueue(): void {
-    if (!this.fetchProductId.trim() || !this.fetchUserId.trim()) return;
+    if (!this.fetchProductId.trim()) return;
     this.isLoading = true;
 
-    const productId = this.fetchProductId.trim();
-    const userId = this.fetchUserId.trim();
-
-    const queuePayload: CaseQueuePayload = {
-      page: this.page,
-      size: this.size,
-      sortField: this.sortField,
-      sortOrder: this.sortOrder
-    };
-
-    this.caseService.getWorkspaceQueue(productId, queuePayload, this.workspaceGroupId, userId).subscribe({
+    this.caseService.getDashboardSummary(
+      this.fetchProductId.trim(),
+      this.fetchUserId.trim(),
+      this.workspaceGroupId.trim(),
+      this.page,
+      this.size
+    ).subscribe({
       next: (res) => {
         this.isLoading = false;
-        this.casesQueue = res.responseObject || [];
-        this.totalCount = res.totalCount || 0;
+        const obj = res?.responseObject || {};
+        // Each queue is { totalCount, data: [...] }
+        const extract = (queue: any): CaseWorkflow[] =>
+          (queue?.data || []).map((c: any) => ({ ...c, escalated: c.isEscalated }));
+
+        this.casesQueue = [
+          ...extract(obj.userPending),
+          ...extract(obj.userCompleted),
+          ...extract(obj.groupPending),
+          ...extract(obj.groupCompleted),
+        ];
+        this.totalCount =
+          (obj.userPending?.totalCount    || 0) +
+          (obj.userCompleted?.totalCount  || 0) +
+          (obj.groupPending?.totalCount   || 0) +
+          (obj.groupCompleted?.totalCount || 0);
       },
       error: () => (this.isLoading = false)
     });

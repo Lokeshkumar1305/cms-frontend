@@ -478,4 +478,19 @@ export class ConfigurationService {
     }
     this.saveToCache();
   }
+
+  // Preview Workflow BPMN (POST /api/cms/process/preview)
+  previewWorkflow(keyValue: string, productId = '', userId = 'system_admin'): Observable<any> {
+    const headers = new HttpHeaders({
+      'X-User-Id':    userId,
+      'X-Product-Id': productId,
+      'Content-Type': 'application/json'
+    });
+    return this.http.post<any>(`${environment.apiUrl}/cms/process/preview`, { keyValue }, { headers }).pipe(
+      catchError(err => {
+        console.warn('Preview API failed:', err);
+        return of({ success: false, message: 'Preview not available.' });
+      })
+    );
+  }
 }

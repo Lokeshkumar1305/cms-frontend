@@ -44,6 +44,7 @@ export interface CaseWorkflow {
   externalMetadata?: CaseExternalMetadata;
   handOffContext?: CaseHandOffContext;
   escalated?: boolean;
+  isEscalated?: boolean;
   isActionable?: boolean;
   isReassignable?: boolean;
   hasActioned?: boolean;
@@ -297,6 +298,36 @@ export class CaseService {
           responseObject: pageItems,
           statusCode: 200,
           totalCount: results.length
+        });
+      })
+    );
+  }
+
+  // Dashboard Summary (POST /api/cms/cases/dashboard/summary — no payload)
+  getDashboardSummary(productId: string, userId: string, groupId = '', page = 1, size = 5): Observable<any> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'X-Product-Id': productId,
+      'X-User-Id':    userId,
+      'X-Group-Id':   groupId
+    });
+    return this.http.post<any>(`${this.apiUrl}/dashboard/summary`, { page, size }, { headers }).pipe(
+      catchError(err => {
+        console.warn('Dashboard summary API unavailable, using mock fallback.', err);
+        const filtered = this.mockCases.filter(c => c.productId === productId);
+        const pending   = filtered.filter(c => !['COMPLETED', 'FAILED'].includes(c.status));
+        const completed = filtered.filter(c => c.status === 'COMPLETED');
+        return of({
+          success: true,
+          message: 'Mock dashboard summary',
+          responseObject: {
+            userPending:   { totalCount: pending.length,   data: pending   },
+            userCompleted: { totalCount: completed.length, data: completed },
+            groupPending:  { totalCount: 0, data: [] },
+            groupCompleted:{ totalCount: 0, data: [] }
+          },
+          statusCode: 200,
+          totalCount: filtered.length
         });
       })
     );

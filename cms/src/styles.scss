@@ -730,3 +730,83 @@ body {
     tr:hover td { background-color: rgba(245, 246, 250, 0.5); }
   }
 }
+
+// ============================================================
+// bpmn-js diagram colour overrides
+// Scoped to .bpmn-preview-diagram to avoid global bleed.
+// Markers are added via canvas.addMarker() in the component.
+// ============================================================
+.bpmn-preview-diagram {
+
+  // Hide bpmn.io watermark
+  .bjs-powered-by { display: none !important; }
+
+  // Canvas fills the container
+  .djs-container { width: 100% !important; height: 100% !important; }
+
+  // ── Label / text ───────────────────────────────────────────
+  .djs-label text,
+  .djs-shape text {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 11.5px !important;
+    fill: #1e293b !important;
+    font-weight: 500 !important;
+  }
+
+  // ── Tasks (marker: bpmn-task) — blue ──────────────────────
+  .bpmn-task .djs-visual rect {
+    fill: #eff6ff !important;
+    stroke: #3b82f6 !important;
+    stroke-width: 2px !important;
+  }
+  .bpmn-task .djs-visual path { stroke: #3b82f6 !important; }
+  .bpmn-task .djs-label text  { fill: #1d4ed8 !important; }
+
+  // ── Start events (marker: bpmn-start) — green ─────────────
+  .bpmn-start .djs-visual circle {
+    fill: #dcfce7 !important;
+    stroke: #16a34a !important;
+    stroke-width: 2px !important;
+  }
+  .bpmn-start .djs-label text { fill: #166534 !important; }
+
+  // ── End events (marker: bpmn-end) — red ───────────────────
+  .bpmn-end .djs-visual circle {
+    fill: #fee2e2 !important;
+    stroke: #dc2626 !important;
+    stroke-width: 3px !important;
+  }
+  .bpmn-end .djs-label text { fill: #991b1b !important; }
+
+  // ── Gateways (marker: bpmn-gateway) — amber ───────────────
+  .bpmn-gateway .djs-visual polygon {
+    fill: #fef9c3 !important;
+    stroke: #ca8a04 !important;
+    stroke-width: 2px !important;
+  }
+  .bpmn-gateway .djs-visual path { stroke: #92400e !important; }
+  .bpmn-gateway .djs-label text  { fill: #92400e !important; }
+
+  // ── Boundary events (marker: bpmn-boundary) — slate ───────
+  .bpmn-boundary .djs-visual circle {
+    fill: #f8fafc !important;
+    stroke: #64748b !important;
+    stroke-width: 1.5px !important;
+  }
+
+  // ── Sequence flow connections ──────────────────────────────
+  .djs-connection .djs-visual path {
+    stroke: #94a3b8 !important;
+    stroke-width: 1.5px !important;
+    fill: none !important;
+  }
+  .djs-connection .djs-visual polygon {
+    fill: #94a3b8 !important;
+    stroke: #94a3b8 !important;
+  }
+
+  // ── Hover highlight ────────────────────────────────────────
+  .djs-shape:hover .djs-visual rect     { stroke-width: 2.5px !important; filter: brightness(0.95); }
+  .djs-shape:hover .djs-visual circle   { stroke-width: 2.5px !important; filter: brightness(0.95); }
+  .djs-shape:hover .djs-visual polygon  { stroke-width: 2.5px !important; filter: brightness(0.95); }
+}

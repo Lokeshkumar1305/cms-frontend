@@ -805,3 +805,221 @@
   border-radius: 8px;
   margin-top: 8px;
 }
+
+.bpmn-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.bpmn-preview-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 97vw;
+  max-width: 1600px;
+  height: 93vh;
+  max-height: 93vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.25);
+}
+
+.bpmn-preview-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bpmn-preview-diagram {
+  flex: 1;
+  min-height: 0;
+  background: #f8fafc radial-gradient(#e2e8f0 1.2px, transparent 1.2px) 0 0 / 20px 20px;
+  position: relative;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+
+  // bpmn-js injects its own canvas; ensure it fills the container
+  :host ::ng-deep {
+    .djs-container {
+      width: 100%;
+      height: 100%;
+    }
+
+    // Hide bpmn.io branding link/text
+    .bjs-powered-by {
+      display: none !important;
+    }
+
+    // Modern styling for BPMN SVG elements
+    svg {
+      
+      // Start Event (Green Emerald Theme)
+      .bpmn-start-event,
+      [data-element-id*="StartEvent"] {
+        circle {
+          fill: #ecfdf5 !important;
+          stroke: #10b981 !important;
+          stroke-width: 2.5px !important;
+          transition: stroke-width 0.2s, stroke 0.2s;
+        }
+        
+        &:hover circle {
+          stroke: #059669 !important;
+          stroke-width: 3px !important;
+        }
+      }
+
+      // End Event (Red Rose Theme)
+      .bpmn-end-event,
+      [data-element-id*="EndEvent"] {
+        circle {
+          fill: #fff1f2 !important;
+          stroke: #f43f5e !important;
+          stroke-width: 3px !important;
+          transition: stroke-width 0.2s, stroke 0.2s;
+        }
+
+        &:hover circle {
+          stroke: #e11d48 !important;
+          stroke-width: 3.5px !important;
+        }
+      }
+
+      // Standard / User / Service Tasks (Indigo Blue Theme)
+      .bpmn-task,
+      .bpmn-user-task,
+      .bpmn-service-task,
+      .bpmn-send-task,
+      .bpmn-receive-task,
+      .bpmn-business-rule-task,
+      .bpmn-script-task,
+      .bpmn-call-activity,
+      [data-element-id*="Task"],
+      [data-element-id*="Activity"] {
+        rect {
+          fill: #eff6ff !important;
+          stroke: #3b82f6 !important;
+          stroke-width: 2px !important;
+          rx: 10px !important;
+          ry: 10px !important;
+          filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.08)) !important;
+          transition: stroke-width 0.2s, stroke 0.2s, fill 0.2s;
+        }
+
+        &:hover rect {
+          fill: #dbeafe !important;
+          stroke: #2563eb !important;
+          stroke-width: 2.5px !important;
+        }
+      }
+
+      // Gateways (Amber Theme)
+      .bpmn-gateway,
+      .bpmn-exclusive-gateway,
+      .bpmn-parallel-gateway,
+      .bpmn-inclusive-gateway,
+      .bpmn-event-based-gateway,
+      [data-element-id*="Gateway"] {
+        polygon {
+          fill: #fffbeb !important;
+          stroke: #f59e0b !important;
+          stroke-width: 2.5px !important;
+          transition: stroke-width 0.2s, stroke 0.2s;
+        }
+
+        &:hover polygon {
+          stroke: #d97706 !important;
+          stroke-width: 3px !important;
+        }
+      }
+
+      // Intermediate Events / Timers (Violet Theme)
+      .bpmn-intermediate-catch-event,
+      .bpmn-intermediate-throw-event,
+      .bpmn-boundary-event,
+      [data-element-id*="timer"],
+      [data-element-id*="Event"] {
+        circle {
+          fill: #faf5ff !important;
+          stroke: #8b5cf6 !important;
+          stroke-width: 2px !important;
+          transition: stroke-width 0.2s, stroke 0.2s;
+        }
+
+        &:hover circle {
+          stroke: #7c3aed !important;
+          stroke-width: 2.5px !important;
+        }
+
+        // Inner circle for timer/boundary event types
+        circle:nth-child(2) {
+          stroke: #8b5cf6 !important;
+        }
+      }
+
+      // Sequence Flows (Slate Grey connections)
+      .bpmn-sequence-flow,
+      .djs-connection,
+      [data-element-id*="Flow"] {
+        path {
+          stroke: #64748b !important;
+          stroke-width: 2.2px !important;
+          transition: stroke 0.2s, stroke-width 0.2s;
+        }
+
+        &:hover path {
+          stroke: #334155 !important;
+          stroke-width: 2.8px !important;
+        }
+
+        // Connection markers/arrows
+        marker path {
+          fill: #64748b !important;
+          stroke: none !important;
+        }
+        
+        &:hover marker path {
+          fill: #334155 !important;
+        }
+      }
+
+      // Text and Labels
+      .djs-label {
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        fill: #1e293b !important;
+        font-size: 12px !important;
+      }
+    }
+  }
+}
+
+.bpmn-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  color: var(--shg-ink-500, #6b7280);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--shg-ink-100, #f3f4f6);
+    color: var(--shg-ink-900, #111827);
+  }
+}

@@ -43,7 +43,7 @@
         </mat-form-field>
       </div>
       <div class="col-12 col-md-3">
-        <label class="field-label">User ID <span style="color:#dc2626">*</span></label>
+        <label class="field-label">User ID <span class="optional-tag">optional</span></label>
         <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
           <input matInput [(ngModel)]="fetchUserId" placeholder="e.g. system_admin" (keyup.enter)="fetchData()" />
         </mat-form-field>
@@ -58,7 +58,7 @@
         <label class="field-label" style="visibility:hidden">_</label>
         <button mat-flat-button color="primary" class="w-100"
           style="flex:1; --mdc-filled-button-container-height:100%; font-size:13px; font-weight:600;"
-          (click)="fetchData()" [disabled]="!fetchProductId.trim() || !fetchUserId.trim() || isLoading">
+          (click)="fetchData()" [disabled]="!fetchProductId.trim() || isLoading">
           <mat-spinner diameter="14" *ngIf="isLoading" class="me-1 spinner-inline"></mat-spinner>
           <i class="bi bi-search" *ngIf="!isLoading"></i>
           <span class="ms-1">{{ isLoading ? 'Fetching...' : 'Fetch Data' }}</span>

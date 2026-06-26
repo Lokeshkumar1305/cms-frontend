@@ -189,6 +189,21 @@
                 </div>
               </div>
 
+              <!-- Root Workflow Key — inq/edit mode only -->
+              <div *ngIf="editMode && rootWorkflowKey" class="row g-3 mb-4">
+                <div class="col-12">
+                  <label class="field-label mb-1">Workflow Key</label>
+                  <div class="d-flex align-items-center gap-2">
+                    <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                      <input matInput [value]="rootWorkflowKey" readonly style="font-size:12px; color:var(--shg-ink-500);" />
+                    </mat-form-field>
+                    <button type="button" mat-stroked-button color="primary" style="height:40px; font-size:12px; white-space:nowrap;" (click)="openWorkflowPreview(rootWorkflowKey)">
+                      <i class="bi bi-eye me-1"></i> Preview
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <mat-divider class="mb-4"></mat-divider>
 
               <!-- Tree Nodes Hierarchy — redesigned -->
@@ -253,6 +268,19 @@
                         <code class="ct-path-chip" style="font-size:10px; padding:1px 7px;">{{ seg }}</code>
                         <i *ngIf="!last" class="bi bi-chevron-right" style="font-size:9px; color:var(--shg-ink-300)"></i>
                       </ng-container>
+                    </div>
+
+                    <!-- Node Workflow Key — inq/edit mode only -->
+                    <div *ngIf="editMode && node.workflowKey" class="mb-3">
+                      <label class="field-label mb-1" style="font-size:11px;">Workflow Key</label>
+                      <div class="d-flex align-items-center gap-2">
+                        <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                          <input matInput [value]="node.workflowKey" readonly style="font-size:11px; color:var(--shg-ink-500);" />
+                        </mat-form-field>
+                        <button type="button" mat-stroked-button color="primary" style="height:40px; font-size:11px; white-space:nowrap;" (click)="openWorkflowPreview(node.workflowKey)">
+                          <i class="bi bi-eye me-1"></i> Preview
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Node header: depth badge + name input + action buttons -->
@@ -750,5 +778,68 @@
       <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
       <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
     </button>
+  </div>
+</div>
+
+<!-- BPMN Workflow Preview Overlay -->
+<div *ngIf="bpmnPreviewOpen" class="bpmn-preview-overlay" (click)="closeBpmnPreview()">
+  <div class="bpmn-preview-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between px-4 py-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="bi bi-diagram-3-fill" style="color:var(--shg-primary); font-size:18px;"></i>
+          <h3 class="shg-title m-0">Workflow Preview</h3>
+        </div>
+        <code class="shg-caption" style="font-size:11px; color:var(--shg-ink-500);">{{ bpmnPreviewKey }}</code>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" mat-stroked-button color="primary" class="d-flex align-items-center gap-1" style="height: 32px; font-size: 11px; padding: 0 10px;" (click)="resetBpmnView()" title="Fit layout to screen">
+          <i class="bi bi-arrows-angle-contract"></i>
+          <span>Fit View</span>
+        </button>
+        <button type="button" class="bpmn-close-btn" (click)="closeBpmnPreview()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+    <mat-divider></mat-divider>
+
+    <!-- Loading -->
+    <div *ngIf="bpmnPreviewLoading" class="d-flex align-items-center justify-content-center gap-3 p-5">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span class="shg-body" style="color:var(--shg-ink-500);">Loading workflow diagram...</span>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="!bpmnPreviewLoading && bpmnPreviewError" class="p-4">
+      <div class="d-flex align-items-center gap-2 p-3 rounded-3" style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:13px;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ bpmnPreviewError }}</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!bpmnPreviewLoading && bpmnPreviewData" class="bpmn-preview-body">
+
+      <!-- Metadata bar -->
+      <div class="d-flex align-items-center gap-4 px-4 py-2 flex-wrap" style="background:var(--shg-canvas); border-bottom:1px solid var(--shg-ink-200); font-size:12px;">
+        <span><span class="text-muted me-1">Process:</span><code style="font-size:11px;">{{ bpmnPreviewData.processId }}</code></span>
+        <span><span class="text-muted me-1">Version:</span><strong>{{ bpmnPreviewData.version }}</strong></span>
+        <span><span class="text-muted me-1">File:</span><code style="font-size:11px;">{{ bpmnPreviewData.fileName }}</code></span>
+      </div>
+
+      <!-- SVG diagram -->
+      <div #bpmnDiagramContainer class="bpmn-preview-diagram"></div>
+
+    </div>
+
+    <mat-divider></mat-divider>
+    <!-- Footer -->
+    <div class="d-flex justify-content-end px-4 py-3">
+      <button mat-flat-button color="primary" (click)="closeBpmnPreview()">Close</button>
+    </div>
+
   </div>
 </div>

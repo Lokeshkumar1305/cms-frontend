@@ -1,4 +1,4 @@
-import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef, ElementRef } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -110,6 +110,15 @@ export class CaseCreateComponent implements OnInit {
 
   editMode = false;
   editConfigId = '';
+  rootWorkflowKey = '';
+  bpmnPreviewOpen = false;
+  bpmnPreviewLoading = false;
+  bpmnPreviewError = '';
+  bpmnPreviewData: any = null;
+  bpmnPreviewKey = '';
+  @ViewChild('bpmnDiagramContainer') bpmnDiagramContainer?: ElementRef;
+  private bpmnViewerInstance: any = null;
+  private resizeObserver: ResizeObserver | null = null;
   createForm!: FormGroup;
   children: TreeNode[] = [];
 
@@ -245,7 +254,22 @@ export class CaseCreateComponent implements OnInit {
     private tenantContext: TenantContextService,
     public cdr: ChangeDetectorRef,
     private el: ElementRef
-  ) {}
+  ) {
+    this.destroyRef.onDestroy(() => {
+      this.cleanupObservers();
+    });
+  }
+
+  private cleanupObservers(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    if (this.bpmnViewerInstance) {
+      this.bpmnViewerInstance.destroy();
+      this.bpmnViewerInstance = null;
+    }
+  }
 
   private scrollTreeToBottom(): void {
     setTimeout(() => {
@@ -267,6 +291,114 @@ export class CaseCreateComponent implements OnInit {
         cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, 60);
+  }
+
+  openWorkflowPreview(workflowKey: string): void {
+    this.bpmnPreviewKey = workflowKey;
+    this.bpmnPreviewOpen = true;
+    this.bpmnPreviewLoading = true;
+    this.bpmnPreviewError = '';
+    this.bpmnPreviewData = null;
+    this.configService.previewWorkflow(workflowKey, this.activeProductId).subscribe(res => {
+      this.bpmnPreviewLoading = false;
+      const data = res?.responseObject ?? res;
+      if (data?.xmlContent) {
+        this.bpmnPreviewData = data;
+        this.cdr.detectChanges();
+        setTimeout(() => this.renderBpmnDiagram(data.xmlContent), 150);
+      } else {
+        this.bpmnPreviewError = res?.message || 'Workflow preview data not available.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeBpmnPreview(): void {
+    this.bpmnPreviewOpen = false;
+    this.bpmnPreviewData = null;
+    this.cleanupObservers();
+  }
+
+  resetBpmnView(): void {
+    if (this.bpmnViewerInstance) {
+      try {
+        const canvas = this.bpmnViewerInstance.get('canvas');
+        const reg    = this.bpmnViewerInstance.get('elementRegistry');
+        this.centerBpmnDiagram(canvas, reg);
+      } catch (e) {
+        console.warn('Could not reset BPMN view:', e);
+      }
+    }
+  }
+
+  private async renderBpmnDiagram(xml: string): Promise<void> {
+    if (!this.bpmnDiagramContainer?.nativeElement) return;
+    try {
+      const { default: BpmnViewer } = await import('bpmn-js/lib/NavigatedViewer');
+      if (this.bpmnViewerInstance) {
+        this.bpmnViewerInstance.destroy();
+      }
+      this.bpmnViewerInstance = new (BpmnViewer as any)({
+        container: this.bpmnDiagramContainer.nativeElement
+      });
+      await this.bpmnViewerInstance.importXML(xml);
+
+      const canvas          = this.bpmnViewerInstance.get('canvas');
+      const elementRegistry = this.bpmnViewerInstance.get('elementRegistry');
+
+      // Apply colour markers so CSS can target each element type
+      elementRegistry.forEach((el: any) => {
+        const t: string = el.type || '';
+        if (t === 'bpmn:StartEvent')                            { canvas.addMarker(el.id, 'bpmn-start'); }
+        else if (t === 'bpmn:EndEvent')                         { canvas.addMarker(el.id, 'bpmn-end'); }
+        else if (t === 'bpmn:BoundaryEvent')                    { canvas.addMarker(el.id, 'bpmn-boundary'); }
+        else if (t.includes('Gateway'))                         { canvas.addMarker(el.id, 'bpmn-gateway'); }
+        else if (t.includes('Task') || t.includes('Activity'))  { canvas.addMarker(el.id, 'bpmn-task'); }
+      });
+
+      // Initial fit, then center after layout settles
+      canvas.zoom('fit-viewport');
+      setTimeout(() => {
+        if (!this.bpmnViewerInstance) return;
+        try { this.centerBpmnDiagram(canvas, elementRegistry); } catch (e) {}
+      }, 350);
+
+    } catch (err) {
+      console.error('BPMN render error:', err);
+      this.bpmnPreviewError = 'Failed to render BPMN diagram.';
+      this.cdr.detectChanges();
+    }
+  }
+
+  private centerBpmnDiagram(canvas: any, elementRegistry: any): void {
+    // Collect bounds from every shape (skip connection waypoints)
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    elementRegistry.forEach((el: any) => {
+      if (el.waypoints || el.x == null || el.width == null) return;
+      minX = Math.min(minX, el.x);
+      minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + el.width);
+      maxY = Math.max(maxY, el.y + el.height);
+    });
+    if (minX === Infinity) { canvas.zoom('fit-viewport'); return; }
+
+    const pad = 60;
+    const containerEl = this.bpmnDiagramContainer!.nativeElement as HTMLElement;
+    const cW = containerEl.clientWidth  || 1200;
+    const cH = containerEl.clientHeight || 600;
+    const contentW = maxX - minX;
+    const contentH = maxY - minY;
+
+    // Scale to fill as much of the container as possible (no upper cap — let it be big)
+    const scale = Math.min((cW - pad * 2) / contentW, (cH - pad * 2) / contentH);
+
+    // Viewport in diagram units, centered on content
+    const vW = cW / scale;
+    const vH = cH / scale;
+    const vX = minX - (vW - contentW) / 2;
+    const vY = minY - (vH - contentH) / 2;
+
+    canvas.viewbox({ x: vX, y: vY, width: vW, height: vH });
   }
 
   ngOnInit(): void {
@@ -364,6 +496,7 @@ export class CaseCreateComponent implements OnInit {
   }
 
   private prefillForm(config: CaseConfiguration): void {
+    this.rootWorkflowKey = (config as any).workflowKey || '';
     this.children = this.mapConfigChildren(config.children || []);
     const notify = config.notificationSettings;
     this.createForm.patchValue({
