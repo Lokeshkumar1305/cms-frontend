@@ -58,14 +58,14 @@ export class CaseCreateComponent implements OnInit {
   ];
 
   goToStep(step: number): void {
-    if (step >= 1 && step <= 5) {
+    if (step >= 1 && step <= 4) {
       this.visitedSteps.add(this.activeStep);
       this.activeStep = step;
     }
   }
 
   nextStep(): void {
-    if (this.activeStep < 5) {
+    if (this.activeStep < 4) {
       this.visitedSteps.add(this.activeStep);
       this.activeStep++;
     }
@@ -82,14 +82,13 @@ export class CaseCreateComponent implements OnInit {
     if (!this.createForm) return false;
     switch (step) {
       case 1: return ['productId', 'userId'].every(c => this.createForm.get(c)?.valid);
-      case 2: return ['nodeName', 'configPath'].every(c => this.createForm.get(c)?.valid);
+      case 2: return ['nodeName', 'configPath'].every(c => this.createForm.get(c)?.valid) && this.approvalTiers.length > 0;
       case 3: return ['fallbackAdminUserId'].every(c => this.createForm.get(c)?.valid);
       case 4: {
         const f = this.createForm;
         if (!f.get('notifyEnabled')?.value) return false;
         return !!(f.get('notifySMSChannel')?.value || f.get('notifyEmailChannel')?.value || f.get('notifyWhatsAppChannel')?.value);
       }
-      case 5: return this.approvalTiers.length > 0 && this.approvalTiers.every(t => t.tierName.trim().length > 0);
       default: return false;
     }
   }
@@ -102,9 +101,9 @@ export class CaseCreateComponent implements OnInit {
 
     for (const ctrl of s1) { if (this.createForm.get(ctrl)?.invalid) return 1; }
     for (const ctrl of s2) { if (this.createForm.get(ctrl)?.invalid) return 2; }
+    if (this.approvalTiers.length === 0) return 2;
     for (const ctrl of s3) { if (this.createForm.get(ctrl)?.invalid) return 3; }
     for (const ctrl of s4) { if (this.createForm.get(ctrl)?.invalid) return 4; }
-    if (this.approvalTiers.length === 0) return 5;
     return null;
   }
 
@@ -638,7 +637,7 @@ export class CaseCreateComponent implements OnInit {
 
     if (this.approvalTiers.length === 0) {
       this.approvalTiersError = 'At least one approval tier is required.';
-      this.activeStep = 5;
+      this.activeStep = 2;
       return;
     }
 

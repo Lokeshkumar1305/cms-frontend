@@ -114,23 +114,6 @@
             </div>
           </div>
 
-          <!-- Line separator -->
-          <div class="stepper-line"></div>
-
-          <!-- Step 5 Tab -->
-          <div class="step-item d-flex align-items-start gap-3 p-3 rounded-3 mb-3 cursor-pointer transition"
-            [class.active]="activeStep === 5"
-            [class.completed]="isStepComplete(5) && activeStep !== 5"
-            (click)="goToStep(5)">
-            <div class="step-number d-flex align-items-center justify-content-center fw-bold transition">
-              <ng-container *ngIf="isStepComplete(5) && activeStep !== 5; else n5"><i class="bi bi-check-lg"></i></ng-container>
-              <ng-template #n5>5</ng-template>
-            </div>
-            <div class="step-details">
-              <div class="step-title fw-bold">Approval Settings</div>
-              <div class="step-caption text-muted mt-1">Required tiers & users</div>
-            </div>
-          </div>
         </div>
 
         <!-- Right Side Active Step Content -->
@@ -200,6 +183,188 @@
                     <button type="button" mat-stroked-button color="primary" style="height:40px; font-size:12px; white-space:nowrap;" (click)="openWorkflowPreview(rootWorkflowKey)">
                       <i class="bi bi-eye me-1"></i> Preview
                     </button>
+                  </div>
+                </div>
+              </div>
+
+              <mat-divider class="mb-4"></mat-divider>
+
+              <!-- Approval Settings -->
+              <div [class.required-card-error]="approvalTiersError" class="p-3 border rounded-3 mb-4" style="background:rgba(37,99,235,0.015);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="form-section-label mb-0">Approval Settings</div>
+                    <span class="required-badge">Required</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="field-label mb-0" style="font-size:11px; white-space:nowrap;">Communication Required</span>
+                      <mat-slide-toggle formControlName="communicationRequired" color="primary"></mat-slide-toggle>
+                    </div>
+                    <button type="button" mat-stroked-button class="add-tier-btn" (click)="addApprovalTier()">
+                      + Add Tier
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="approvalTiersError" class="d-flex align-items-center gap-2 mb-3 px-2 py-2 rounded-2"
+                  style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px;">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  <span>{{ approvalTiersError }}</span>
+                </div>
+
+                <div *ngIf="approvalTiers.length === 0 && !approvalTiersError" class="text-center py-3"
+                  style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
+                  No approval tiers added
+                </div>
+                <div *ngIf="approvalTiers.length === 0 && approvalTiersError" class="text-center py-3"
+                  style="color:#dc2626; font-size:12px; border:1px dashed rgba(220,38,38,0.4); border-radius:8px; background:rgba(220,38,38,0.04)">
+                  Add at least one approval tier to proceed
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                  <div *ngFor="let tier of approvalTiers; let i = index" class="approval-tier-card p-3 rounded-3 border">
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span class="tier-level-badge">Level {{ i + 1 }}</span>
+                      <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
+                        style="font-size:12px; text-decoration:none" (click)="removeApprovalTier(i)">Remove</button>
+                    </div>
+
+                    <div class="field-group">
+                      <label class="field-label">Tier name</label>
+                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                        <input matInput [(ngModel)]="tier.tierName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Manager Final Audit" />
+                      </mat-form-field>
+                    </div>
+
+                    <div class="field-group">
+                      <label class="field-label">Authorized groups</label>
+                      <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedGroups.length > 0">
+                        <span *ngFor="let grp of tier.authorizedGroups; let j = index" class="group-chip">
+                          {{ grp }} <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromTier(i, j)"></i>
+                        </span>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
+                          <input matInput [(ngModel)]="tier.newGroup" [ngModelOptions]="{standalone:true}" placeholder="e.g. CHECKER_GP" (keyup.enter)="addGroupToTier(i)" />
+                        </mat-form-field>
+                        <button type="button" mat-stroked-button class="add-group-btn" (click)="addGroupToTier(i)">Add</button>
+                      </div>
+                    </div>
+
+                    <div class="field-group">
+                      <label class="field-label">Authorized users</label>
+                      <div class="table-responsive border rounded-3 bg-white mb-3" *ngIf="tier.authorizedUsers.length > 0">
+                        <table class="table table-sm table-borderless align-middle mb-0" style="font-size:12px">
+                          <thead class="table-light">
+                            <tr class="border-bottom">
+                              <th class="ps-3 py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">User ID</th>
+                              <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Full Name</th>
+                              <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Contact Info</th>
+                              <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;" *ngIf="createForm.get('communicationRequired')?.value">Prefs</th>
+                              <th class="py-2 text-end pe-3 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let usr of tier.authorizedUsers; let j = index">
+                              <td class="ps-3 py-2 fw-semibold" style="color:var(--shg-ink-900);">{{ usr.userId }}</td>
+                              <td class="py-2 text-dark">{{ usr.fullName || '-' }}</td>
+                              <td class="py-2 text-muted">
+                                <div *ngIf="usr.email" style="font-size:11px;"><i class="bi bi-envelope me-1"></i>{{ usr.email }}</div>
+                                <div *ngIf="usr.mobileNumber" style="font-size:11px;"><i class="bi bi-phone me-1"></i>{{ usr.mobileNumber }}</div>
+                              </td>
+                              <td class="py-2" *ngIf="createForm.get('communicationRequired')?.value">
+                                <div class="d-flex gap-1">
+                                  <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.EMAIL">EMAIL</span>
+                                  <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.SMS">SMS</span>
+                                  <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.WHATSAPP">WHATSAPP</span>
+                                </div>
+                              </td>
+                              <td class="py-2 text-end pe-3">
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0" (click)="removeUserFromTier(i, j)">
+                                  <i class="bi bi-trash-fill fs-6"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="p-3 border rounded-3 bg-white mb-2">
+                        <div class="fw-bold mb-2 text-uppercase" style="font-size:10px; color:var(--shg-ink-500); letter-spacing:0.5px;">Add Authorized User</div>
+                        <div class="row g-2 mb-2">
+                          <div class="col-12 col-sm-6">
+                            <label class="field-label mb-1" style="font-size:11px;">User ID <span class="text-danger">*</span></label>
+                            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                              <input matInput [(ngModel)]="tier.newUserId" [ngModelOptions]="{standalone:true}" placeholder="e.g. retail_agent_01" (keyup.enter)="addUserToTier(i)" />
+                            </mat-form-field>
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <label class="field-label mb-1" style="font-size:11px;">Full Name</label>
+                            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                              <input matInput [(ngModel)]="tier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Lokesh Kumar" (keyup.enter)="addUserToTier(i)" />
+                            </mat-form-field>
+                          </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                          <div class="col-12 col-sm-6">
+                            <label class="field-label mb-1" style="font-size:11px;">Email</label>
+                            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                              <input matInput type="email" [(ngModel)]="tier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="example@gmail.com" (keyup.enter)="addUserToTier(i)" />
+                            </mat-form-field>
+                          </div>
+                          <div class="col-12 col-sm-6">
+                            <label class="field-label mb-1" style="font-size:11px;">Mobile Number</label>
+                            <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                              <input matInput [(ngModel)]="tier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" maxlength="10" (keyup.enter)="addUserToTier(i)" />
+                            </mat-form-field>
+                          </div>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 pt-2 border-top">
+                          <div class="d-flex gap-3 align-items-center flex-wrap" *ngIf="createForm.get('communicationRequired')?.value">
+                            <span class="field-label mb-0" style="font-size:11px;">Preferences:</span>
+                            <mat-checkbox [(ngModel)]="tier.newUserPrefEmail" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">EMAIL</mat-checkbox>
+                            <mat-checkbox [(ngModel)]="tier.newUserPrefSMS" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">SMS</mat-checkbox>
+                            <mat-checkbox [(ngModel)]="tier.newUserPrefWhatsApp" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">WHATSAPP</mat-checkbox>
+                          </div>
+                          <span *ngIf="!createForm.get('communicationRequired')?.value"></span>
+                          <button type="button" mat-flat-button color="primary" style="height:32px; font-size:11px; font-weight:600; padding:0 12px;" (click)="addUserToTier(i)" [disabled]="!tier.newUserId.trim()">
+                            Add User
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <mat-divider class="my-3"></mat-divider>
+                    <div class="fw-bold mb-2 text-uppercase" style="font-size:10px; color:var(--shg-ink-500); letter-spacing:0.5px">SLA Settings</div>
+                    <div class="row g-2 mb-2">
+                      <div class="col-12 col-sm-6">
+                        <label class="field-label mb-1" style="font-size:11px;">Soft Reminder (minutes)</label>
+                        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                          <input matInput type="number" [(ngModel)]="tier.softReminderMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 30" />
+                        </mat-form-field>
+                      </div>
+                      <div class="col-12 col-sm-6">
+                        <label class="field-label mb-1" style="font-size:11px;">Hard SLA Breach (minutes)</label>
+                        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                          <input matInput type="number" [(ngModel)]="tier.hardSlaBreachMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 60" />
+                        </mat-form-field>
+                      </div>
+                      <div class="col-12 col-sm-6">
+                        <label class="field-label mb-1" style="font-size:11px;">Hard SLA Action</label>
+                        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+                          <mat-select [(ngModel)]="tier.hardSlaAction" [ngModelOptions]="{standalone:true}" placeholder="Select action">
+                            <mat-option value="">Select action</mat-option>
+                            <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mt-2">
+                      <span class="field-label mb-0">Strict binding</span>
+                      <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}" color="primary"></mat-slide-toggle>
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -556,209 +721,6 @@
             </mat-card>
           </div>
 
-          <!-- Step 5 Content -->
-          <div class="step-panel animate-fade" *ngIf="activeStep === 5">
-            <mat-card class="form-section-card p-4" [class.required-card-error]="approvalTiersError">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <div class="d-flex align-items-center gap-2">
-                  <div class="form-section-label mb-0">Approval Settings</div>
-                  <span class="required-badge">Required</span>
-                </div>
-                <button type="button" mat-stroked-button class="add-tier-btn" (click)="addApprovalTier()">
-                  + Add Tier
-                </button>
-              </div>
-
-              <!-- Communication Required Toggle -->
-              <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-white mb-3 mt-2">
-                <div>
-                  <span class="fw-semibold shg-body d-block" style="font-size:13px; color:var(--shg-ink-900);">Communication Required</span>
-                  <span class="shg-caption text-muted" style="font-size:11px">Master toggle to enforce notification/preferences checks on approvers</span>
-                </div>
-                <mat-slide-toggle formControlName="communicationRequired" color="primary"></mat-slide-toggle>
-              </div>
-
-              <!-- Error message -->
-              <div *ngIf="approvalTiersError" class="d-flex align-items-center gap-2 mb-3 mt-1 px-2 py-2 rounded-2"
-                style="background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); color:#dc2626; font-size:12px;">
-                <i class="bi bi-exclamation-circle-fill"></i>
-                <span>{{ approvalTiersError }}</span>
-              </div>
-
-              <div *ngIf="approvalTiers.length === 0 && !approvalTiersError" class="text-center py-3 mb-0"
-                style="color:var(--shg-ink-300); font-size:12px; border:1px dashed var(--shg-ink-200); border-radius:8px">
-                No approval tiers added
-              </div>
-              <div *ngIf="approvalTiers.length === 0 && approvalTiersError" class="text-center py-3 mb-0"
-                style="color:#dc2626; font-size:12px; border:1px dashed rgba(220,38,38,0.4); border-radius:8px; background:rgba(220,38,38,0.04)">
-                Add at least one approval tier to proceed
-              </div>
-
-              <div class="d-flex flex-column gap-3">
-                <div *ngFor="let tier of approvalTiers; let i = index" class="approval-tier-card p-3 rounded-3 border">
-
-                  <!-- Tier Header -->
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="tier-level-badge">Level {{ i + 1 }}</span>
-                    <button type="button" class="btn btn-link p-0 text-danger fw-semibold"
-                      style="font-size:12px; text-decoration:none" (click)="removeApprovalTier(i)">Remove</button>
-                  </div>
-
-                  <!-- Tier Name -->
-                  <div class="field-group">
-                    <label class="field-label">Tier name</label>
-                    <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                      <input matInput [(ngModel)]="tier.tierName" [ngModelOptions]="{standalone:true}"
-                        placeholder="e.g. Manager Final Audit" />
-                    </mat-form-field>
-                  </div>
-
-                  <!-- Authorized Groups -->
-                  <div class="field-group">
-                    <label class="field-label">Authorized groups</label>
-                    <div class="d-flex flex-wrap gap-1 mb-2" *ngIf="tier.authorizedGroups.length > 0">
-                      <span *ngFor="let grp of tier.authorizedGroups; let j = index" class="group-chip">
-                        {{ grp }}
-                        <i class="bi bi-x" style="cursor:pointer" (click)="removeGroupFromTier(i, j)"></i>
-                      </span>
-                    </div>
-                    <div class="d-flex gap-2">
-                      <mat-form-field appearance="outline" class="flex-grow-1" subscriptSizing="dynamic">
-                        <input matInput [(ngModel)]="tier.newGroup" [ngModelOptions]="{standalone:true}"
-                          placeholder="e.g. CHECKER_GP"
-                          (keyup.enter)="addGroupToTier(i)" />
-                      </mat-form-field>
-                      <button type="button" mat-stroked-button class="add-group-btn" (click)="addGroupToTier(i)">Add</button>
-                    </div>
-                  </div>
-
-                  <!-- Authorized Users -->
-                  <div class="field-group">
-                    <label class="field-label">Authorized users</label>
-                    
-                    <!-- Existing Users Table -->
-                    <div class="table-responsive border rounded-3 bg-white mb-3" *ngIf="tier.authorizedUsers.length > 0">
-                      <table class="table table-sm table-borderless align-middle mb-0" style="font-size:12px">
-                        <thead class="table-light">
-                          <tr class="border-bottom">
-                            <th class="ps-3 py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">User ID</th>
-                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Full Name</th>
-                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Contact Info</th>
-                            <th class="py-2 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;" *ngIf="createForm.get('communicationRequired')?.value">Prefs</th>
-                            <th class="py-2 text-end pe-3 text-muted" style="font-size:10px; font-weight:700; text-transform:uppercase;">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let usr of tier.authorizedUsers; let j = index" class="border-bottom-0">
-                            <td class="ps-3 py-2 fw-semibold" style="color:var(--shg-ink-900);">{{ usr.userId }}</td>
-                            <td class="py-2 text-dark">{{ usr.fullName || '-' }}</td>
-                            <td class="py-2 text-muted">
-                              <div *ngIf="usr.email" style="font-size:11px;"><i class="bi bi-envelope me-1"></i>{{ usr.email }}</div>
-                              <div *ngIf="usr.mobileNumber" style="font-size:11px;"><i class="bi bi-phone me-1"></i>{{ usr.mobileNumber }}</div>
-                            </td>
-                            <td class="py-2" *ngIf="createForm.get('communicationRequired')?.value">
-                              <div class="d-flex gap-1">
-                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.EMAIL">EMAIL</span>
-                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.SMS">SMS</span>
-                                <span class="badge bg-light text-dark border" style="font-size:9px; padding:3px 6px;" *ngIf="usr.preferences?.WHATSAPP">WHATSAPP</span>
-                              </div>
-                            </td>
-                            <td class="py-2 text-end pe-3">
-                              <button type="button" class="btn btn-sm btn-link text-danger p-0 border-0" (click)="removeUserFromTier(i, j)" title="Remove user">
-                                <i class="bi bi-trash-fill fs-6"></i>
-                              </button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <!-- Add User Sub-Form -->
-                    <div class="p-3 border rounded-3 bg-white mb-2">
-                      <div class="fw-bold mb-2 text-uppercase" style="font-size: 10px; color: var(--shg-ink-500); letter-spacing: 0.5px;">Add Authorized User</div>
-                      <div class="row g-2 mb-2">
-                        <div class="col-12 col-sm-6">
-                          <label class="field-label mb-1" style="font-size:11px;">User ID <span class="text-danger">*</span></label>
-                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput [(ngModel)]="tier.newUserId" [ngModelOptions]="{standalone:true}" placeholder="e.g. retail_agent_01" (keyup.enter)="addUserToTier(i)" />
-                          </mat-form-field>
-                        </div>
-                        <div class="col-12 col-sm-6">
-                          <label class="field-label mb-1" style="font-size:11px;">Full Name</label>
-                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput [(ngModel)]="tier.newUserFullName" [ngModelOptions]="{standalone:true}" placeholder="e.g. Lokesh Kumar" (keyup.enter)="addUserToTier(i)" />
-                          </mat-form-field>
-                        </div>
-                      </div>
-                      <div class="row g-2 mb-2">
-                        <div class="col-12 col-sm-6">
-                          <label class="field-label mb-1" style="font-size:11px;">Email</label>
-                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput type="email" [(ngModel)]="tier.newUserEmail" [ngModelOptions]="{standalone:true}" placeholder="example@gmail.com" (keyup.enter)="addUserToTier(i)" />
-                          </mat-form-field>
-                        </div>
-                        <div class="col-12 col-sm-6">
-                          <label class="field-label mb-1" style="font-size:11px;">Mobile Number</label>
-                          <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                            <input matInput [(ngModel)]="tier.newUserMobileNumber" [ngModelOptions]="{standalone:true}" placeholder="e.g. 9999988888" maxlength="10" (keyup.enter)="addUserToTier(i)" />
-                          </mat-form-field>
-                        </div>
-                      </div>
-                      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-2 pt-2 border-top">
-                        <div class="d-flex gap-3 align-items-center flex-wrap" *ngIf="createForm.get('communicationRequired')?.value">
-                          <span class="field-label mb-0" style="font-size:11px;">Preferences:</span>
-                          <mat-checkbox [(ngModel)]="tier.newUserPrefEmail" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">EMAIL</mat-checkbox>
-                          <mat-checkbox [(ngModel)]="tier.newUserPrefSMS" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">SMS</mat-checkbox>
-                          <mat-checkbox [(ngModel)]="tier.newUserPrefWhatsApp" [ngModelOptions]="{standalone:true}" color="primary" style="font-size:11px;">WHATSAPP</mat-checkbox>
-                        </div>
-                        <span *ngIf="!createForm.get('communicationRequired')?.value"></span>
-                        <button type="button" mat-flat-button color="primary" class="btn btn-sm text-uppercase" style="height:32px; font-size:11px; font-weight:600; padding:0 12px;" (click)="addUserToTier(i)" [disabled]="!tier.newUserId.trim()">
-                          Add User
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- SLA Settings -->
-                  <mat-divider class="my-3"></mat-divider>
-                  <div class="fw-bold mb-2 text-uppercase" style="font-size:10px; color:var(--shg-ink-500); letter-spacing:0.5px">SLA Settings</div>
-                  <div class="row g-2 mb-2">
-                    <div class="col-12 col-sm-6">
-                      <label class="field-label mb-1" style="font-size:11px;">Soft Reminder (minutes)</label>
-                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                        <input matInput type="number" [(ngModel)]="tier.softReminderMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 30" />
-                      </mat-form-field>
-                    </div>
-                    <div class="col-12 col-sm-6">
-                      <label class="field-label mb-1" style="font-size:11px;">Hard SLA Breach (minutes)</label>
-                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                        <input matInput type="number" [(ngModel)]="tier.hardSlaBreachMinutes" [ngModelOptions]="{standalone:true}" placeholder="e.g. 60" />
-                      </mat-form-field>
-                    </div>
-                    <div class="col-12 col-sm-6">
-                      <label class="field-label mb-1" style="font-size:11px;">Hard SLA Action</label>
-                      <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
-                        <mat-select [(ngModel)]="tier.hardSlaAction" [ngModelOptions]="{standalone:true}" placeholder="Select action">
-                          <mat-option value="">Select action</mat-option>
-                          <mat-option *ngFor="let a of hardSlaActions" [value]="a.value">{{ a.label }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-                  </div>
-
-                  <!-- Strict Binding -->
-                  <div class="d-flex align-items-center justify-content-between mt-2">
-                    <span class="field-label mb-0">Strict binding</span>
-                    <mat-slide-toggle [(ngModel)]="tier.strictBinding" [ngModelOptions]="{standalone:true}"
-                      color="primary"></mat-slide-toggle>
-                  </div>
-
-                </div>
-              </div>
-
-            </mat-card>
-          </div>
-
         </div>
       </div>
     </form>
@@ -773,8 +735,8 @@
   <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
   <div class="footer-nav-actions">
     <button mat-stroked-button type="button" *ngIf="activeStep > 1" (click)="prevStep()">Back</button>
-    <button mat-flat-button color="primary" type="button" *ngIf="activeStep < 5" (click)="nextStep()">Next</button>
-    <button mat-flat-button color="primary" type="button" *ngIf="activeStep === 5" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
+    <button mat-flat-button color="primary" type="button" *ngIf="activeStep < 4" (click)="nextStep()">Next</button>
+    <button mat-flat-button color="primary" type="button" *ngIf="activeStep === 4" (click)="onSubmit()" [disabled]="isSubmitting" class="save-btn">
       <mat-spinner diameter="16" *ngIf="isSubmitting" class="me-2 spinner-inline"></mat-spinner>
       <span>{{ isSubmitting ? (editMode ? 'Updating...' : 'Creating...') : (editMode ? 'Update Configuration' : 'Register Configuration') }}</span>
     </button>
