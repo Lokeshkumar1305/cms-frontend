@@ -595,10 +595,10 @@ export class CaseCreateComponent implements OnInit {
             WHATSAPP: commRequired ? !!u.preferences?.WHATSAPP : false
           }
         })),
-        softReminderMinutes:  t.softReminderMinutes  ?? 0,
+        softReminderMinutes:  t.softReminderMinutes  || null,
         softReminderChannels: slaChannels,
-        hardSlaBreachMinutes: t.hardSlaBreachMinutes ?? 0,
-        hardSlaAction:        t.hardSlaAction
+        hardSlaBreachMinutes: t.hardSlaBreachMinutes || null,
+        hardSlaAction:        t.hardSlaAction        || null
       };
     });
   }
